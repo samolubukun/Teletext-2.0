@@ -4,14 +4,18 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:backend": "convex dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "convex run seed:run"
   },
   "dependencies": {
+    "@google/genai": "^3.1.0",
     "@hexclave/next": "^1.0.135",
-    "@teletext/core": "^0.1.0",
+    "@teletext/ai": "*",
+    "@teletext/core": "*",
     "convex": "^1.49.0",
     "next": "16.4.6",
     "react": "19.3.0",

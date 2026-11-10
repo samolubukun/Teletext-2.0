@@ -26,3 +26,6 @@ Thumbs.db
 *.log
 
 # NOTE: never ignore /.kiro. Judges check it.
+
+# Private planning document (never commit)
+/Can Teletext 2.0 Win Kiroween 2026.md

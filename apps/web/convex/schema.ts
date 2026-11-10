@@ -1,24 +1,18 @@
-// Stage 1 data model. Mirrors the product doc (Appendix C2), adapted to Convex:
-// - No SQL constraints: uniqueness (slug, page number) and range checks are enforced in mutations.
-// - No row-level security: org-scoped functions go through the orgQuery/orgMutation wrappers.
-// - Stage 2 tables (stacks, stack_tables, ...) are added only when Stage 2 starts.
+// Stage 1 data model (product doc Appendix C2, adapted to Convex):
+// - No SQL constraints: uniqueness (slug, page number) and range checks live in mutations.
+// - No row-level security: org-scoped functions call requireOrgAccess (convex/lib/access.ts).
+// - Stage 2 tables (stacks, ...) are added only when Stage 2 starts.
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export const plan = v.union(v.literal("free"), v.literal("pro"), v.literal("org"));
 export const role = v.union(v.literal("owner"), v.literal("editor"), v.literal("viewer"));
-export const pageStatus = v.union(
-  v.literal("draft"),
-  v.literal("review"),
-  v.literal("published"),
-  v.literal("archived"),
-);
-export const fastextColor = v.union(
-  v.literal("red"),
-  v.literal("green"),
-  v.literal("yellow"),
-  v.literal("blue"),
-);
+export const pageStatus = v.union(v.literal("draft"), v.literal("review"), v.literal("published"), v.literal("archived"));
+export const fastextLink = v.object({
+  color: v.union(v.literal("red"), v.literal("green"), v.literal("yellow"), v.literal("blue")),
+  label: v.string(),
+  page: v.number(),
+});
 
 export default defineSchema({
   organizations: defineTable({
@@ -27,8 +21,12 @@ export default defineSchema({
     plan,
     rangeStart: v.number(),
     rangeEnd: v.number(),
-    /** Convex storage id of the mosaic logo source image, if any. */
-    logoStorageId: v.optional(v.id("_storage")),
+    /** Page used by the blue HELP fastext button. Defaults to the first page of the range. */
+    helpPage: v.optional(v.number()),
+    requireApproval: v.optional(v.boolean()),
+    /** Minutes east of UTC for page headers (Nigeria = 60). */
+    utcOffsetMinutes: v.optional(v.number()),
+    category: v.optional(v.string()),
   })
     .index("by_slug", ["slug"])
     .index("by_rangeStart", ["rangeStart"]),
@@ -52,35 +50,31 @@ export default defineSchema({
     publishAt: v.optional(v.number()),
     expiresAt: v.optional(v.number()),
     updatedAt: v.number(),
+    /** Visible text of the current version, for reader search. */
+    searchText: v.string(),
   })
     .index("by_number", ["number"])
+    .index("by_org", ["orgId", "number"])
     .index("by_org_status", ["orgId", "status"])
-    .index("by_status_number", ["status", "number"]),
+    .index("by_status_number", ["status", "number"])
+    .searchIndex("search_text", { searchField: "searchText", filterFields: ["status"] }),
 
   pageVersions: defineTable({
     pageId: v.id("pages"),
     version: v.number(),
-    /** Input blocks (what the editor edits). Validated with Zod against @teletext/core types. */
+    /** Input blocks (what the editor edits), validated with blocksSchema from @teletext/core. */
     blocks: v.any(),
-    /** Page[] output of render(), stored so public reads never render. */
+    /** SerializedPage[] from render(), so public reads never render. */
     rendered: v.any(),
+    fastext: v.array(fastextLink),
+    errorCount: v.number(),
+    warningCount: v.number(),
+    /** AI values not found in the source that the publisher has not confirmed yet. */
+    uncheckedFacts: v.number(),
     createdBy: v.string(),
   }).index("by_page_version", ["pageId", "version"]),
 
-  fastextLinks: defineTable({
-    pageId: v.id("pages"),
-    color: fastextColor,
-    targetNumber: v.number(),
-    label: v.string(),
-  }).index("by_page_color", ["pageId", "color"]),
-
-  dataSources: defineTable({
-    pageId: v.id("pages"),
-    type: v.union(v.literal("sheet"), v.literal("rss")),
-    config: v.any(),
-    lastSyncedAt: v.optional(v.number()),
-    lastError: v.optional(v.string()),
-  }).index("by_page", ["pageId"]),
+  aiUsage: defineTable({ orgId: v.id("organizations") }).index("by_org", ["orgId"]),
 
   pageViews: defineTable({
     pageNumber: v.number(),

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="10" fill="#000"/>
+  <rect x="6" y="8" width="13" height="10" fill="#ff2b2b"/>
+  <rect x="19" y="8" width="13" height="10" fill="#00e33d"/>
+  <rect x="32" y="8" width="13" height="10" fill="#ffee00"/>
+  <rect x="45" y="8" width="13" height="10" fill="#2b4bff"/>
+  <text x="32" y="47" font-family="Courier New, monospace" font-weight="700" font-size="22" fill="#ffee00" text-anchor="middle">P100</text>
+</svg>
