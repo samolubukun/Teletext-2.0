@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Core tests",
+      "trigger": "PostFileSave",
+      "description": "Runs the packages/core unit and property tests when a core file is saved.",
+      "matcher": "packages[\\\\/]core[\\\\/].*\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npm test --workspace @teletext/core",
+        "timeout": 180
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Spec sync",
+      "trigger": "PostFileSave",
+      "description": "Checks design.md and tasks.md still match a spec's requirements.md.",
+      "matcher": "\\.kiro[\\\\/]specs[\\\\/][^\\\\/]+[\\\\/]requirements\\.md$",
+      "action": {
+        "type": "agent",
+        "prompt": "A spec's requirements.md was just saved. Compare it with design.md and tasks.md in the same folder. List (1) requirements with no matching design section or task, (2) tasks that reference requirement numbers that no longer exist, and (3) correctness properties that no longer match a requirement. Report the gaps only; do not edit files unless asked."
+      }
+    }
+  ]
+}

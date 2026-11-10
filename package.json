@@ -1,0 +1,21 @@
+{
+  "name": "teletext-2",
+  "private": true,
+  "description": "Teletext 2.0: publish to the public in two minutes, read in two seconds.",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "check:boundary": "node scripts/check-core-boundary.mjs"
+  }
+}

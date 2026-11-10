@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Builds
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env files (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Test and tool output
+coverage/
+playwright-report/
+test-results/
+.vercel/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.log
+
+# NOTE: never ignore /.kiro. Judges check it.

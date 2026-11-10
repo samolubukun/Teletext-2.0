@@ -1,0 +1,94 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden fixtures > RESULTS_TABLE renders as expected 1`] = `
+[
+  [
+    " P412 GREENFIELD H      Tue 10 Nov 14:32",
+    " JSS3 MATHS RESULTS                     ",
+    "                                        ",
+    "   ID Name     Grade Score              ",
+    " 1001 A. Bello A        86              ",
+    " 1002 C. Eze   B        74              ",
+    " 1003 F. Musa  C        61              ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    " INDEX     BACK      NEXT      HELP     ",
+  ],
+]
+`;
+
+exports[`golden fixtures > SCHOOL_NOTICE renders as expected 1`] = `
+[
+  [
+    " P412 GREENFIELD H      Tue 10 Nov 14:32",
+    "  TERM 1 EXAM RESULTS                   ",
+    "                                        ",
+    "                                        ",
+    " Results are now available.             ",
+    "                                        ",
+    " Check results:   page 413              ",
+    " Collect reports: Fri 13 Nov            ",
+    " Time:            09:00 - 15:00         ",
+    " Place:           Main hall             ",
+    "                                        ",
+    " Questions? Call the office:            ",
+    " 0800 000 0000                          ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    " INDEX     BACK      NEXT      HELP     ",
+  ],
+]
+`;
+
+exports[`golden fixtures > TRANSPORT_ALERT renders as expected 1`] = `
+[
+  [
+    " P412 GREENFIELD H      Tue 10 Nov 14:32",
+    "  ROUTE 12 - LIVE                       ",
+    "                                        ",
+    "                                        ",
+    " Stop       Next Status                 ",
+    " Central   14:40 On time                ",
+    " Market Rd 14:46 Delayed 5 min          ",
+    " Hospital  14:55 On time                ",
+    "                                        ",
+    " ALERT: Road works on Park Ave. Route 12",
+    " uses Mill St until Fri.                ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    "                                        ",
+    " INDEX     BACK      NEXT      HELP     ",
+  ],
+]
+`;

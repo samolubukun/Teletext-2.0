@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Boundary guard",
+      "trigger": "PostFileSave",
+      "description": "Fails when packages/core uses the DOM, network, clock, randomness, env vars or app packages.",
+      "matcher": "packages[\\\\/]core[\\\\/]src[\\\\/].*\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npm run check:boundary",
+        "timeout": 60
+      }
+    }
+  ]
+}
