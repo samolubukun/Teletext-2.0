@@ -33,4 +33,5 @@ jobs:
         env:
           # Placeholders: the build does not call Convex or Hexclave.
           NEXT_PUBLIC_CONVEX_URL: https://example.convex.cloud
-          NEXT_PUBLIC_HEXCLAVE_PROJECT_ID: 00000000-0000-0000-0000-000000000000
+          # Must be a well-formed (v4) UUID or Hexclave refuses to construct the client.
+          NEXT_PUBLIC_HEXCLAVE_PROJECT_ID: 11111111-1111-4111-8111-111111111111
