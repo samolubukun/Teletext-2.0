@@ -10,6 +10,8 @@ export type ScreenProps = {
   headerOverride?: string;
   /** Extra text shown at the right of the header instead of the clock, e.g. "OFFLINE". */
   flashing?: boolean;
+  /** Live clock for the reader's header (a real set shows the current time, not the save time). */
+  clock?: { date: string; time: string };
   className?: string;
   ariaHidden?: boolean;
 };
@@ -23,7 +25,7 @@ type Cell = {
   flash: boolean;
 };
 
-function rowCells(row: string, override?: string): Cell[] {
+function rowCells(row: string, override?: string, clock?: { date: string; time: string }): Cell[] {
   const tokens = decodeRow(row);
   let fg: Color = "white";
   let bg: Color = "black";
@@ -47,7 +49,10 @@ function rowCells(row: string, override?: string): Cell[] {
       else if (t.code === "steady") flash = false;
       return cell;
     }
-    const ch = override && i >= 1 && i <= 4 ? (override[i - 1] ?? " ") : t.ch;
+    let ch = override && i >= 1 && i <= 4 ? (override[i - 1] ?? " ") : t.ch;
+    // Header layout (see packages/core decorate.ts): date in cells 24-33, time in cells 35-39.
+    if (clock && i >= 24 && i <= 33) ch = clock.date[i - 24] ?? " ";
+    else if (clock && i >= 35 && i <= 39) ch = clock.time[i - 35] ?? " ";
     return { ch, fg, bg, mosaic, double, flash };
   });
 }
@@ -75,11 +80,11 @@ function renderCell(cell: Cell, key: number): ReactNode {
   );
 }
 
-function ScreenImpl({ page, headerOverride, className, ariaHidden = true }: ScreenProps) {
+function ScreenImpl({ page, headerOverride, clock, className, ariaHidden = true }: ScreenProps) {
   return (
     <div className={`tt-screen ${className ?? ""}`} aria-hidden={ariaHidden}>
       {page.r.map((row, r) => {
-        const cells = rowCells(row, r === 0 ? headerOverride : undefined);
+        const cells = rowCells(row, r === 0 ? headerOverride : undefined, r === 0 ? clock : undefined);
         const isDouble = cells.some((c) => c.double);
         return (
           <div key={r} className={`tt-row${isDouble ? " tt-double" : ""}`}>

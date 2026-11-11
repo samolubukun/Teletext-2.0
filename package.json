@@ -16,6 +16,7 @@
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "check:boundary": "node scripts/check-core-boundary.mjs"
+    "check:boundary": "node scripts/check-core-boundary.mjs",
+    "pre-submit": "node scripts/pre-submit.mjs"
   }
 }

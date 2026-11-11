@@ -1,0 +1,36 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - run: npm run check:boundary
+      - run: npm run typecheck --workspace @teletext/core --workspace @teletext/ai
+      - run: npm test --workspace @teletext/core --workspace @teletext/ai
+        env:
+          FC_RUNS: "1000"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - run: npm run build --workspace @teletext/web
+        env:
+          # Placeholders: the build does not call Convex or Hexclave.
+          NEXT_PUBLIC_CONVEX_URL: https://example.convex.cloud
+          NEXT_PUBLIC_HEXCLAVE_PROJECT_ID: 00000000-0000-0000-0000-000000000000

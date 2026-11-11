@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Type check and AI tests",
+      "trigger": "PostFileSave",
+      "description": "Type-checks and tests packages/ai when its source changes.",
+      "matcher": "packages[\\\\/]ai[\\\\/](src|test)[\\\\\\/].*\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "npm run typecheck --workspace @teletext/ai && npm test --workspace @teletext/ai",
+        "timeout": 180
+      }
+    }
+  ]
+}

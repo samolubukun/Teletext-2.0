@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Style guard",
+      "trigger": "PostFileSave",
+      "description": "Checks seed content and templates against the teletext style rules when saved.",
+      "matcher": "(convex[\\\\/]seed\\.ts|src[\\\\/]lib[\\\\/]templates\\.ts|src[\\\\/]lib[\\\\/]systemPages\\.ts)$",
+      "action": {
+        "type": "agent",
+        "prompt": "A teletext content file (seed pages, templates or system pages) was just saved. Read .kiro/steering/teletext-style.md, then check the page content in the saved file against it. Report violations only: headlines over 38 characters or not uppercase, dates not written like \"Mon 12 Nov\", times not in 24-hour form, money not written like N2,500, emoji or non-ASCII characters, curly quotes or long dashes, invented-looking real people or phone numbers (demo data must be fake), and pages with no link back to 100. Do not edit files unless asked."
+      }
+    }
+  ]
+}

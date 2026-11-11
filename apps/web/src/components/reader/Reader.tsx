@@ -39,6 +39,16 @@ function formatTime(ms: number | null): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
+/** "Wed 11 Nov" and "14:32" in the reader's own time zone, like the clock on a real teletext set. */
+function liveClock(d: Date): { date: string; time: string } {
+  const date = `${DAY_NAMES[d.getDay()]} ${String(d.getDate()).padStart(2, "0")} ${MONTH_NAMES[d.getMonth()]}`;
+  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return { date, time };
+}
+
 async function fetchPage(number: number, back: number): Promise<Loaded> {
   try {
     const res = await fetch(`/api/pages/${number}`, { headers: { Accept: "application/json" } });
@@ -66,6 +76,14 @@ export function Reader({ initialNumber = 100, initialSub = 1 }: { initialNumber?
   const [query, setQuery] = useState("");
   const [showKeypad, setShowKeypad] = useState(false);
   const currentRef = useRef<{ number: number; sub: number }>({ number: initialNumber, sub: initialSub });
+  // Set after mount so server and browser HTML match; ticks every 15 s.
+  const [clock, setClock] = useState<{ date: string; time: string } | null>(null);
+  useEffect(() => {
+    const tick = () => setClock(liveClock(new Date()));
+    tick();
+    const id = window.setInterval(tick, 15_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     setSettings(loadSettings());
@@ -251,7 +269,7 @@ export function Reader({ initialNumber = 100, initialSub = 1 }: { initialNumber?
           }}
         >
           {page ? (
-            <TeletextScreen page={page} headerOverride={override} />
+            <TeletextScreen page={page} headerOverride={override} clock={clock ?? undefined} />
           ) : (
             <div className="tt-screen" aria-hidden>
               <div className="tt-row" />
