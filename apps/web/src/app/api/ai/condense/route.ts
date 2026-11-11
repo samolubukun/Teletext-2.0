@@ -1,27 +1,37 @@
 // POST /api/ai/condense  { orgId, source }  with  Authorization: Bearer <Convex auth token>.
 // Gemini runs here on the server; GEMINI_API_KEY comes from the environment and never reaches the browser.
 // Authorization and the per-plan rate limit are enforced by Convex (aiUsage.authorize).
+// Model: GEMINI_MODEL (default gemini-3.5-flash-lite), falling back to GEMINI_FALLBACK_MODEL
+// (default gemini-3.1-flash-lite) on any error such as 503 or a timeout.
 import { GoogleGenAI } from "@google/genai";
-import { condense, MAX_SOURCE_CHARS, type ModelCall } from "@teletext/ai";
+import { condense, MAX_SOURCE_CHARS, withModelFallback, type ModelCall } from "@teletext/ai";
 import { fetchMutation } from "convex/nextjs";
 import { ConvexError } from "convex/values";
 import { z } from "zod";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 
+export const maxDuration = 60;
+
+const PRIMARY_MODEL = "gemini-3.5-flash-lite";
+const FALLBACK_MODEL = "gemini-3.1-flash-lite";
+const PER_CALL_TIMEOUT_MS = 20_000;
+
 const body = z.object({ orgId: z.string().min(1).max(64), source: z.string().min(20).max(MAX_SOURCE_CHARS * 2) });
 
-function geminiCall(apiKey: string, model: string): ModelCall {
-  const client = new GoogleGenAI({ apiKey });
+function geminiCall(client: GoogleGenAI, model: string): ModelCall {
   return async ({ system, prompt, schema }) => {
-    const interaction = await client.interactions.create({
-      model,
-      input: prompt,
-      system_instruction: system,
-      response_format: { type: "text", mime_type: "application/json", schema: schema as Record<string, unknown> },
-      store: false,
-    });
-    if (!interaction.output_text) throw new Error("The AI returned an empty answer.");
+    const interaction = await client.interactions.create(
+      {
+        model,
+        input: prompt,
+        system_instruction: system,
+        response_format: { type: "text", mime_type: "application/json", schema: schema as Record<string, unknown> },
+        store: false,
+      },
+      { timeout: PER_CALL_TIMEOUT_MS, maxRetries: 0 },
+    );
+    if (!interaction.output_text) throw new Error("empty answer");
     return interaction.output_text;
   };
 }
@@ -47,6 +57,14 @@ export async function POST(request: Request) {
     return error(status, data?.code ?? "forbidden", data?.message ?? "You do not have permission to do that.");
   }
 
-  const result = await condense(parsed.data.source, geminiCall(apiKey, process.env.GEMINI_MODEL || "gemini-3.8-flash"), { publisher });
-  return Response.json(result, { headers: { "Cache-Control": "no-store" } });
+  const client = new GoogleGenAI({ apiKey });
+  const models = [process.env.GEMINI_MODEL || PRIMARY_MODEL, process.env.GEMINI_FALLBACK_MODEL || FALLBACK_MODEL];
+  const used: string[] = [];
+  const call = withModelFallback(models, (m) => geminiCall(client, m), (a) => {
+    if (a.ok) used.push(a.model);
+    else console.warn(`[ai] ${a.model} failed: ${a.error}`);
+  });
+
+  const result = await condense(parsed.data.source, call, { publisher });
+  return Response.json({ ...result, model: used.at(-1) ?? null }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -100,6 +100,34 @@ describe("fact guard examples", () => {
   });
 });
 
+describe("regression: first live Gemini run (10 Nov 2026)", () => {
+  const source = `Dear parents and guardians,
+The Term 1 examination reports for all JSS3 students will be ready for collection on Friday 13 November 2026.
+Collection will take place in the Main Hall between 9am and 3pm. Please bring your child's ID card.
+Outstanding fees of N2,500 must be cleared before reports can be released.
+For questions, call the school office on 0800 000 0000.
+Mrs Adaeze Okafor, Principal, Greenfield High`;
+  const draft = `JSS3 TERM 1 EXAM REPORTS
+Term 1 exam reports for all JSS3 students are ready for collection.
+Date: Friday 13 Nov 2026
+Time: 9am to 3pm
+Where: Main Hall
+Fees: N2,500
+Call: 0800 000 0000
+Principal Adaeze Okafor`;
+
+  it("does not glue labels on separate lines into fake names", () => {
+    const report = factGuard(source, draft);
+    expect(report.unmatched).toEqual([]);
+  });
+
+  it("does not report sentence starters as dropped names", () => {
+    const dropped = factGuard(source, draft).dropped.map((v) => v.raw);
+    expect(dropped).not.toContain("The Term");
+    expect(dropped).not.toContain("Mrs Adaeze Okafor");
+  });
+});
+
 describe("condense orchestration", () => {
   const good = JSON.stringify({
     title: "Term 1 reports",

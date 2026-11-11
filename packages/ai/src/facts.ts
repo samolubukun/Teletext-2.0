@@ -131,7 +131,16 @@ const RULES: Rule[] = [
   },
 ];
 
-const NAME = /\b[A-Z][a-z]+(?:\s+(?:of|de|van|da)\b)?(?:\s+(?:[A-Z][a-z]+|[A-Z]\.))+/g;
+// Names never span lines, colons or commas (found by the first live Gemini run: labels on separate
+// lines such as "Where" / "Main Hall" / "Fees" were glued into one fake name).
+const NAME = /\b[A-Z][a-z]+(?:[ \t]+(?:of|de|van|da)\b)?(?:[ \t]+(?:[A-Z][a-z]+|[A-Z]\.))+/g;
+/** Capitalised sentence starters and labels that are not part of a name. */
+const NAME_STOP_WORDS = new Set([
+  "The", "A", "An", "Dear", "Please", "Our", "Your", "This", "These", "All", "For", "From", "On", "At", "In", "To",
+  "Date", "Time", "Where", "When", "Place", "Fees", "Fee", "Call", "Bring", "Check", "Collect", "Note", "Term",
+  // Titles: the AI often drops or swaps them ("Mrs Adaeze Okafor" -> "Principal Adaeze Okafor").
+  "Mr", "Mrs", "Ms", "Miss", "Dr", "Prof", "Principal", "Pastor", "Chief", "Alhaji", "Alhaja", "Hon", "Sir",
+]);
 const NOT_NAME_WORDS = new Set([
   ...MONTHS.map((m) => m[0]?.toUpperCase() + m.slice(1)),
   "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
@@ -189,16 +198,34 @@ export function extractValues(text: string): FactValue[] {
   NAME.lastIndex = 0;
   let n: RegExpExecArray | null;
   while ((n = NAME.exec(work)) !== null) {
-    const words = n[0].split(/\s+/);
+    let words = n[0].split(/[ \t]+/);
+    let offset = 0;
+    while (words.length > 0 && NAME_STOP_WORDS.has(words[0] ?? "")) {
+      offset += (words[0] ?? "").length + 1;
+      words = words.slice(1);
+    }
+    while (words.length > 0 && NAME_STOP_WORDS.has(words[words.length - 1] ?? "")) words = words.slice(0, -1);
+    if (words.length < 2) continue;
     if (words.every((w) => NOT_NAME_WORDS.has(w.replace(/\.$/, "")))) continue;
-    const raw = n[0].replace(/\s+/g, " ");
-    out.push({ kind: "name", raw, key: `name:${raw.toLowerCase()}`, index: n.index, sentence: sentenceAt(source, n.index) });
+    const raw = words.join(" ");
+    const index = n.index + offset;
+    out.push({ kind: "name", raw, key: `name:${raw.toLowerCase()}`, index, sentence: sentenceAt(source, index) });
   }
   return out.sort((a, b) => a.index - b.index);
 }
 
 function squash(s: string): string {
   return s.toLowerCase().replace(/\s+/g, " ");
+}
+
+function wordSet(s: string): Set<string> {
+  return new Set(s.toLowerCase().match(/[a-z]+/g) ?? []);
+}
+
+/** A name counts as present when every word of it appears in the text, in any order ("Principal Adaeze Okafor"). */
+function nameIn(name: string, words: Set<string>): boolean {
+  const parts = name.toLowerCase().match(/[a-z]+/g) ?? [];
+  return parts.length > 0 && parts.every((p) => words.has(p));
 }
 
 /** Matches every draft value to the source (A1, A2) and lists dropped source values. */
@@ -208,7 +235,8 @@ export function factGuard(sourceText: string, draftText: string): FactReport {
   const sourceByKey = new Map<string, FactValue>();
   for (const v of sourceValues) if (!sourceByKey.has(v.key)) sourceByKey.set(v.key, v);
   const sourceLower = squash(sourceText);
-  const draftLower = squash(draftText);
+  const sourceWords = wordSet(sourceText);
+  const draftWords = wordSet(draftText);
 
   const matched: FactPair[] = [];
   const unmatched: FactValue[] = [];
@@ -218,12 +246,11 @@ export function factGuard(sourceText: string, draftText: string): FactReport {
       matched.push({ draft: v, source: hit });
       continue;
     }
-    if (v.kind === "name") {
-      const at = sourceLower.indexOf(squash(v.raw));
-      if (at >= 0) {
-        matched.push({ draft: v, source: { ...v, index: at, sentence: sentenceAt(sourceText, Math.min(at, sourceText.length - 1)) } });
-        continue;
-      }
+    if (v.kind === "name" && nameIn(v.raw, sourceWords)) {
+      const first = (v.raw.match(/[A-Za-z]+/g) ?? []).at(-1) ?? v.raw;
+      const at = Math.max(0, sourceLower.indexOf(first.toLowerCase()));
+      matched.push({ draft: v, source: { ...v, index: at, sentence: sentenceAt(sourceText, Math.min(at, Math.max(0, sourceText.length - 1))) } });
+      continue;
     }
     unmatched.push(v);
   }
@@ -234,7 +261,7 @@ export function factGuard(sourceText: string, draftText: string): FactReport {
   for (const v of sourceValues) {
     if (seen.has(v.key)) continue;
     seen.add(v.key);
-    const present = v.kind === "name" ? draftLower.includes(squash(v.raw)) : draftKeys.has(v.key);
+    const present = v.kind === "name" ? nameIn(v.raw, draftWords) : draftKeys.has(v.key);
     if (!present) dropped.push(v);
   }
   return { matched, unmatched, dropped };

@@ -99,7 +99,7 @@ export function blocksToText(blocks: readonly Block[]): string {
         case "bullets":
           return b.items.join("\n");
         case "keyvalue":
-          return b.rows.map((r) => `${r.label} ${r.value}`).join("\n");
+          return b.rows.map((r) => `${r.label}: ${r.value}`).join("\n");
         case "table":
           return [b.header ?? [], ...b.rows].map((r) => r.join(" ")).join("\n");
         case "link":
