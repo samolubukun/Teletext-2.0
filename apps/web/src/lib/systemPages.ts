@@ -32,14 +32,16 @@ export function indexPage(orgs: IndexOrg[], nowIso: string): SerializedPage[] {
     const key = o.category || "Community";
     byCategory.set(key, [...(byCategory.get(key) ?? []), o]);
   }
+  // One compact list (no blank line per category) so the index fits on a single screen:
+  //   SCHOOLS    Greenfield High 400
+  const rows: { label: string; value: string }[] = [];
   for (const [category, list] of byCategory) {
-    blocks.push({ type: "heading", level: 2, text: category.toUpperCase() });
-    for (const o of list) {
+    list.forEach((o, i) => {
       const first = o.pages[0]?.number ?? o.rangeStart;
-      blocks.push({ type: "link", label: o.name, page: first });
-    }
+      rows.push({ label: i === 0 ? category.toUpperCase() : "", value: `${o.name} ${first}` });
+    });
   }
-  blocks.push({ type: "divider" });
+  if (rows.length > 0) blocks.push({ type: "keyvalue", rows });
   blocks.push({ type: "link", label: "How to use teletext", page: HELP_PAGE });
   blocks.push({ type: "link", label: "Publish your own pages", page: PUBLISH_PAGE });
 
