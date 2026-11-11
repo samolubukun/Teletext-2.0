@@ -192,6 +192,14 @@ export function Reader({ initialNumber = 100, initialSub = 1 }: { initialNumber?
     e.preventDefault();
     const q = query.trim();
     if (q.length < 2) return;
+    // A three-digit number is a page number, not a keyword: open that page.
+    if (/^\d{3}$/.test(q)) {
+      const n = Number(q);
+      setQuery("");
+      if (n >= 100 && n <= 899) void goTo(n);
+      else setLoaded({ number: 100, pages: invalidNumberPage(n, currentRef.current.number, nowIso()), isLive: false, updatedAt: null, offline: false, status: "invalid" });
+      return;
+    }
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data = (await res.json()) as { hits?: { number: number; title: string }[] };

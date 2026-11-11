@@ -128,6 +128,13 @@ Principal Adaeze Okafor`;
   });
 });
 
+describe("regression: times at the end of a sentence (first in-app run)", () => {
+  it("does not swallow the sentence's full stop", () => {
+    expect(extractValues("Classes resume Thursday 26 November at 8am.").find((v) => v.kind === "time")?.raw).toBe("8am");
+    expect(extractValues("We open at 8 a.m. sharp").find((v) => v.kind === "time")?.key).toBe("time:08:00");
+  });
+});
+
 describe("condense orchestration", () => {
   const good = JSON.stringify({
     title: "Term 1 reports",

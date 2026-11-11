@@ -75,16 +75,18 @@ body {
   mix-blend-mode: multiply;
 }
 
+/* Rows are block lines of inline-block cells, so copying the screen gives one text line per row. */
 .tt-row {
-  display: grid;
-  grid-template-columns: repeat(40, var(--cell-w));
+  display: block;
+  white-space: nowrap;
   height: var(--cell-h);
   overflow: visible;
   position: relative;
 }
 
 .tt-cell {
-  display: block;
+  display: inline-block;
+  vertical-align: top;
   width: var(--cell-w);
   height: var(--cell-h);
   text-align: center;

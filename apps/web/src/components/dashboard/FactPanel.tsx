@@ -38,7 +38,9 @@ export function FactPanel({ report, onAddBack }: { report: FactReport; onAddBack
           <p className="text-neutral-500">No numbers, dates or names in the draft.</p>
         ) : (
           <ul className="flex flex-col gap-1">
-            {report.matched.map((pair, i) => (
+            {report.matched
+              .filter((p, i, all) => all.findIndex((q) => q.draft.key === p.draft.key && q.draft.raw === p.draft.raw) === i)
+              .map((pair, i) => (
               <li key={i} className="rounded border border-neutral-800 p-2">
                 <span className="mr-2 rounded bg-green-500 px-2 py-0.5 font-mono text-black">{pair.draft.raw}</span>
                 <span className="text-neutral-400">from: &quot;{pair.source.sentence.slice(0, 160)}&quot;</span>

@@ -85,7 +85,8 @@ const RULES: Rule[] = [
   },
   {
     kind: "time",
-    re: /\b(\d{1,2})(?:[:.](\d{2}))?\s?([ap]\.?m\.?)(?![a-z])/gi,
+    // "8am", "8 pm", "8:30 a.m." (the dotted form only; a bare "am." must not eat the sentence's full stop)
+    re: /\b(\d{1,2})(?:[:.](\d{2}))?\s?([ap](?:m|\.m\.))(?![a-z])/gi,
     key: (m) => {
       const t = normalizeTime(Number(m[1]), Number(m[2] ?? 0), m[3]);
       return t ? `time:${t}` : null;
