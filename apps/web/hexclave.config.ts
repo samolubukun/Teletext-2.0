@@ -9,5 +9,6 @@ export const config = defineHexclaveConfig({
     password: { allowSignIn: true },
     otp: { allowSignIn: true },
   },
-  domains: { allowLocalhost: true },
+  // Domains (localhost, the Vercel URL) are environment-level settings: the cloud rejects them in
+  // this branch config, so add the production domain in the Hexclave dashboard after deploying.
 });
