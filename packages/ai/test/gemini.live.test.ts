@@ -41,5 +41,10 @@ describe.skipIf(!live)("Gemini live condense", () => {
     console.log("UNMATCHED:", result.facts.unmatched.map((v) => v.raw).join(" | ") || "(none)");
     console.log("dropped:", result.facts.dropped.map((v) => v.raw).join(" | ") || "(none)");
     expect(result.usedFallback).toBe(false);
+    expect(result.facts.unmatched.filter((v) => v.kind !== "name")).toEqual([]);
+    // condense-v2: a range stays a range, never "9am and 3pm".
+    const text = JSON.stringify(result.blocks);
+    expect(text).not.toMatch(/9am and 3pm/i);
+    expect(text).toMatch(/9am (to|-) ?3pm|9am-3pm/i);
   }, 120_000);
 });

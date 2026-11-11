@@ -34,3 +34,25 @@ Three lines a day: what Kiro did well, what it got wrong, what changed in a stee
 **Tooling friction**
 - `npx convex dev` hangs in the agent shell (interactive prompts). `CONVEX_AGENT_MODE=anonymous`
   in a background process created a local deployment and generated `convex/_generated`.
+
+## Wed 11 Nov 2026 - Gate B passed (13 days early)
+
+- Signed in with Hexclave, created an org (pages 200-249), pasted a fake school notice, condensed it
+  with Gemini, fact guard checked 14 values, published page 201, read it at /p/201. 1,423 bytes.
+- Models: gemini-3.5-flash-lite primary, gemini-3.1-flash-lite fallback. In 2 of 3 live runs the primary
+  was fine; once it returned 503 "high demand" and the fallback answered. Keep the fallback.
+- gemini-3.8-flash was listed for the key but returned 503, so it is not the default.
+
+**Bugs the real run found (none of these were caught by the unit tests)**
+1. Fact guard glued labels on separate lines ("Where / Main Hall / Fees") into one fake name.
+2. Fact guard flagged "Principal Adaeze Okafor" because the source said "Mrs Adaeze Okafor". Titles are
+   now ignored when comparing names.
+3. The time regex ate the sentence's full stop: "8am." instead of "8am".
+4. **The fact guard cannot see changed meaning.** The AI turned "between 9am and 3pm" into
+   "9am and 3pm". Both times exist in the source, so the guard passed it. The fix is in the prompt
+   (condense-v2: ranges stay ranges), not in code. Write-up point: a value-level guard and a
+   meaning-level prompt rule are two different layers.
+5. Reader search treated "200" as a keyword. A three-digit entry now opens that page.
+
+**Prompt versions**: condense-v1 -> condense-v2 (ranges, conditions, sender line, label length).
+Evaluation harness (20 documents) is still to do; record the score here when it exists.
