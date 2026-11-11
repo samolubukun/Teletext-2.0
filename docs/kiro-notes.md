@@ -56,3 +56,19 @@ Three lines a day: what Kiro did well, what it got wrong, what changed in a stee
 
 **Prompt versions**: condense-v1 -> condense-v2 (ranges, conditions, sender line, label length).
 Evaluation harness (20 documents) is still to do; record the score here when it exists.
+
+## Wed 11 Nov 2026 - repo pushed, CI found a test bug
+
+- Pushed to https://github.com/samolubukun/Teletext-2.0 (public, MIT detected). History scanned: no API key,
+  no private planning document in any commit.
+- **CI caught a bug in a property test, on a different random seed than my local runs.** P4 failed after 165
+  cases (seed -514409881). Shrunk counterexample: one heading whose text is a single Unicode hyphen.
+  The renderer was right (it keeps "-" as content). My test helper stripped hyphens *before* deciding
+  whether the input was empty, so it expected the "No content yet." page. Lesson for the write-up:
+  a randomised test is only as good as its oracle; a fixed local seed hides this, CI's fresh seed found it.
+  The counterexample is now a permanent regression test.
+- CI also caught a setup mistake: Hexclave refuses a project id that is not a well-formed UUID, so the build job
+  needs a real-looking placeholder.
+- Added: live header clock in the reader, README, specs for reader-app / offline-pwa / publisher-dashboard /
+  ai-condenser, hooks (AI tests, secret guard, style guard), `npm run pre-submit`, `docs/kiro-checklist.md`.
+- Blocked: Kiro does not let the agent write `.kiro/settings/` (MCP config). Pasted by hand instead.

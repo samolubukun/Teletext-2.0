@@ -60,10 +60,13 @@ describe("renderer properties", () => {
   it("P4: pagination loses and adds nothing (ignoring spacing, bullets and hyphens)", () => {
     fc.assert(
       fc.property(fc.array(fc.oneof(headingBlock, textBlock), { maxLength: 15 }), (bs) => {
-        const expected = strip(bs.map(blockText).join(" "));
+        // Decide "is there any content" BEFORE stripping: a block that is only "-" or "*" is real content
+        // that strip() removes (found by CI on seed -514409881, shrunk to a heading of one Unicode hyphen).
+        const raw = bs.map(blockText).join(" ").trim();
+        const expected = raw ? strip(raw) : strip("No content yet.");
         const { pages } = render(bs, CTX);
         const actual = strip(pages.flatMap(pageText).join(" "));
-        expect(actual).toBe(expected || strip("No content yet."));
+        expect(actual).toBe(expected);
       }),
       { numRuns: RUNS },
     );
@@ -217,6 +220,15 @@ describe("renderer properties", () => {
       }),
       { numRuns: Math.max(100, RUNS / 5) },
     );
+  });
+});
+
+describe("regressions found by CI", () => {
+  it("P4: a heading that is only a Unicode hyphen is content, not an empty page", () => {
+    const { pages } = render([{ type: "heading", text: "\u2010", level: 1 }], CTX);
+    const text = pages.flatMap(pageText).join(" ");
+    expect(text).toContain("-");
+    expect(text).not.toContain("No content yet");
   });
 });
 
