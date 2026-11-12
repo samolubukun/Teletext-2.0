@@ -149,3 +149,11 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
 - Lesson for the write-up: all functional tests and axe were green while the page cost 6.6 s of main-thread blocking on a throttled CPU.
   Only a performance tool saw it. Real-device tests on cheap phones matter for exactly this reason.
 - To verify after the Vercel redeploy: rerun `npx lighthouse@12 https://teletext-2-0.vercel.app/` and record the live score here.
+
+### Correction: live Lighthouse after the fix (3 runs)
+
+- The local 93 did **not** carry over. Live Performance after the fix: 69, 64, 67 (before: 64). Total Blocking Time 6,620 ms -> 1,130 / 2,740 / 1,210 ms.
+  Style & Layout fell from 12 s to 0.5 s, so the CSS bug was real and is fixed, but the score barely moved. Accessibility, Best Practices and SEO stay at 100.
+- Remaining cost: Speed Index 4.6-6.5 s. The reader paints nothing until JavaScript runs and `/api/pages/100` returns (HTML -> JS -> fetch -> render),
+  and one 840 ms hydration task remains. Likely fix: server-render the first page into the HTML. **Decision (12 Nov): leave it.** Revisit only if time is left after the Kiro items.
+- Lesson: one good local run is not a result. Run the live check several times before writing a number down.
