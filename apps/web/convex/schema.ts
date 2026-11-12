@@ -63,6 +63,8 @@ export default defineSchema({
     isLive: v.boolean(),
     publishAt: v.optional(v.number()),
     expiresAt: v.optional(v.number()),
+    /** Set when a scheduled job could not do its work, so the owner sees why (cleared on the next schedule change). */
+    scheduleNote: v.optional(v.string()),
     updatedAt: v.number(),
     /** Visible text of the current version, for reader search. */
     searchText: v.string(),

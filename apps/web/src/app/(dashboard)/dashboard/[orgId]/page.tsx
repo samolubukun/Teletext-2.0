@@ -98,6 +98,8 @@ export default function OrgPage() {
                       </td>
                       <td>
                         <StatusBadge status={p.status} />
+                        {p.publishAt !== undefined && <span className="ml-2 text-xs text-yellow-300">publishes {new Date(p.publishAt).toLocaleString()}</span>}
+                        {p.expiresAt !== undefined && <span className="ml-2 text-xs text-yellow-300">expires {new Date(p.expiresAt).toLocaleString()}</span>}
                       </td>
                       <td className="text-xs text-neutral-400">{new Date(p.updatedAt).toLocaleString()}</td>
                     </tr>

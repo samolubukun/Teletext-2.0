@@ -13,6 +13,7 @@ import { api } from "../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
 import { FactPanel } from "@/components/dashboard/FactPanel";
+import { ScheduleCard } from "@/components/dashboard/ScheduleCard";
 import { Button, Card, Shell, StatusBadge, errorMessage, inputClass } from "@/components/dashboard/ui";
 import { TeletextScreen } from "@/components/teletext/TeletextScreen";
 import { TEMPLATES } from "@/lib/templates";
@@ -347,6 +348,18 @@ export default function EditorPage() {
               {JSON.stringify(pages).length.toLocaleString()} bytes for {pages.length} screen(s). Budget: 5 KB per screen.
             </p>
           </Card>
+
+          {data.canPublish && (
+            <ScheduleCard
+              key={`${data.status}-${data.publishAt ?? ""}-${data.expiresAt ?? ""}`}
+              pageId={data.pageId}
+              status={data.status}
+              publishAt={data.publishAt}
+              expiresAt={data.expiresAt}
+              scheduleNote={data.scheduleNote}
+              uncheckedFacts={uncheckedFacts}
+            />
+          )}
 
           <Card title={`Checks (${errors.length} errors, ${warnings.length} warnings)`}>
             {preview.warnings.length === 0 ? (

@@ -9,7 +9,7 @@
 - [x] 6. Validation panel using renderer warnings
 - [x] 7. Publish flow, plan limits, fact confirmation, mock upgrade (D4)
 - [x] 8. Version history UI and restore (D5): `pages.versions`, `pages.restore`, editor card; 4 convex-test cases
-- [ ] 9. Scheduled publish and expiry with `ctx.scheduler.runAt` (D6)
+- [x] 9. Scheduled publish and expiry with `ctx.scheduler.runAt` (D6): pure rules in core/schedule.ts (S1-S4), pages.setSchedule + applySchedule, public route refuses expired pages, Schedule card; 12 convex-test cases
 - [x] 10. Fastext editor
 - [ ] 10a. QR code and printable poster
 - [ ] 10b. Mosaic logo tool

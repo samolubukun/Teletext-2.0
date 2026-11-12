@@ -1,5 +1,6 @@
 // Public page API: GET /api/pages/412 -> { pages: SerializedPage[], isLive, updatedAt }.
 // Cached at the edge (s-maxage) and by the service worker, so most reads never reach Convex.
+import { isVisible } from "@teletext/core";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "../../../../../convex/_generated/api";
 import { cacheHeaders, convexConfigured } from "@/lib/convexServer";
@@ -23,11 +24,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ num
         headers: cacheHeaders(60),
       });
     }
-    const page = await fetchQuery(api.public.page, { number });
-    if (!page) {
+    const found = await fetchQuery(api.public.page, { number });
+    // The expiry job flips the status at the exact time; this check means a late job never leaves an expired page readable (D6).
+    if (!found || !isVisible({ status: "published", expiresAt: found.expiresAt }, Date.now())) {
       return Response.json({ error: { code: "not_found", message: `Page ${number} not found.` } }, { status: 404, headers: { "Cache-Control": "public, s-maxage=30" } });
     }
-    return new Response(JSON.stringify(page), { headers: cacheHeaders(page.isLive ? 15 : 60) });
+    const { expiresAt, ...page } = found;
+    // Do not cache past the expiry time.
+    const untilExpiry = expiresAt === undefined ? Infinity : Math.floor((expiresAt - Date.now()) / 1000);
+    const seconds = Math.max(1, Math.min(page.isLive ? 15 : 60, untilExpiry));
+    return new Response(JSON.stringify(page), { headers: cacheHeaders(seconds) });
   } catch {
     return Response.json({ error: { code: "unavailable", message: "The page service is busy. Try again." } }, { status: 503 });
   }

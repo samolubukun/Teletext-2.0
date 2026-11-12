@@ -7,7 +7,7 @@ export const page = query({
   args: { number: v.number() },
   returns: v.union(
     v.null(),
-    v.object({ pages: v.any(), isLive: v.boolean(), updatedAt: v.number(), publisher: v.string() }),
+    v.object({ pages: v.any(), isLive: v.boolean(), updatedAt: v.number(), publisher: v.string(), expiresAt: v.optional(v.number()) }),
   ),
   handler: async (ctx, { number }) => {
     if (!Number.isInteger(number) || number < 100 || number > 899) return null;
@@ -16,7 +16,8 @@ export const page = query({
     const version = await ctx.db.get(page.currentVersionId);
     const org = await ctx.db.get(page.orgId);
     if (!version || !org) return null;
-    return { pages: version.rendered, isLive: page.isLive, updatedAt: page.updatedAt, publisher: org.name };
+    // expiresAt lets the route handler refuse a page whose expiry job is late (no Date.now() in a query).
+    return { pages: version.rendered, isLive: page.isLive, updatedAt: page.updatedAt, publisher: org.name, expiresAt: page.expiresAt };
   },
 });
 

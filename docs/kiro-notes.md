@@ -168,3 +168,19 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
 - Known gap: no rate limit on `acceptInvite` guesses. A 12-character code from a 31-letter alphabet is about 59 bits, so guessing is not practical,
   but the security steering doc asks for rate limits on lookups; add one if time allows.
 - Known lint debt (older code, not from today): `react-hooks/set-state-in-effect` in `Reader.tsx` and the editor page, and a plain `<a href="/dashboard">` in `Reader.tsx`. CI does not lint the web app yet.
+
+## Thu 12 Nov 2026 - scheduled publishing, and three bugs from 10,000-run properties
+
+- Built scheduled publish and expiry (D6). Pure rules first in `packages/core/src/schedule.ts` with properties S1-S4 written before the Convex code;
+  then `pages.setSchedule` (owner and editor), the `applySchedule` job fired by `ctx.scheduler.runAt`, a Schedule card, and a guard in
+  `/api/pages/[number]` so a late job cannot leave an expired page readable. 12 convex-test cases drive the scheduler with fake timers.
+- **Bug 1 (found by S3, my own stronger property):** an `expiresAt` of `NaN` never counted as expired (every comparison with NaN is false), so a page
+  could stay public forever. The UI cannot send NaN, but Convex accepts it and corrupt data must fail closed. Rule is now "set but not after now = expired".
+  Shrunk case kept as a regression test. I only found it because my first S3 contained a tautology that I noticed and replaced with a real property.
+- **Bug 2 (A5, only at FC_RUNS=10000, seed -1500802222):** source text `MOn`. The fallback summary uppercases its title, `MON`, and the fact guard reads
+  that as Monday: the "never invents a value" fallback invented a weekday. Fix: keep the original case when uppercasing would change the values in the title.
+  This failed at 10,000 runs and not at 1,000: the reason to run the big number before submission.
+- **Bug 3 (P-E2, my new eval property, seed -1307602928):** `Aa AbA` produced the name `Aa Ab`, because the name regex had no word boundary after each word.
+  A real fact-guard defect, found by a property written for a different purpose. Fixed with `\b`.
+- Gate A evidence: all 57 core tests pass at FC_RUNS=10000 (357 s); ai package 26 tests pass at 10,000.
+- Test lesson: after changing the public route, the first e2e run failed 2 of 26 on cold start and passed 26 of 26 on re-run; the assertion timeout is now 10 s.

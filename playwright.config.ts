@@ -13,6 +13,8 @@ const LIVE = process.env.E2E_BASE_URL;
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 30_000,
+  // The first request to a freshly started server is slow (cold Convex fetch); 5 s was too tight.
+  expect: { timeout: 10_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
   use: { baseURL: LIVE ?? `http://localhost:${PORT}`, trace: "retain-on-failure" },
