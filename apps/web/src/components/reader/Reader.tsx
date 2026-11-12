@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TeletextScreen } from "@/components/teletext/TeletextScreen";
 import { invalidNumberPage, notFoundPage, offlinePage, searchPage } from "@/lib/systemPages";
+import { ReportPage } from "./ReportPage";
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type ReaderSettings } from "./settings";
 
 type Loaded = {
@@ -47,6 +48,16 @@ function liveClock(d: Date): { date: string; time: string } {
   const date = `${DAY_NAMES[d.getDay()]} ${String(d.getDate()).padStart(2, "0")} ${MONTH_NAMES[d.getMonth()]}`;
   const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   return { date, time };
+}
+
+/** Fire and forget: one tiny beacon per page opened. It carries only the page number; the server derives the device class. */
+function countView(number: number) {
+  try {
+    const body = new Blob([JSON.stringify({ number })], { type: "application/json" });
+    if (!navigator.sendBeacon?.("/api/view", body)) void fetch("/api/view", { method: "POST", body, keepalive: true }).catch(() => undefined);
+  } catch {
+    // Counting is optional.
+  }
 }
 
 async function fetchPage(number: number, back: number): Promise<Loaded> {
@@ -109,6 +120,7 @@ export function Reader({ initialNumber = 100, initialSub = 1 }: { initialNumber?
     const result = await fetchPage(number, back);
     currentRef.current = { number, sub: subPage };
     setLoaded(result);
+    if (result.status === "ok" && !result.offline && number !== 100) countView(number);
     setSub(Math.min(Math.max(1, subPage), result.pages.length));
     setChangedRows(new Set());
     const path = subPage > 1 ? `/p/${number}/${subPage}` : number === 100 ? "/" : `/p/${number}`;
@@ -378,6 +390,8 @@ export function Reader({ initialNumber = 100, initialSub = 1 }: { initialNumber?
         />
         <button className="rounded bg-cyan-400 px-3 py-2 font-mono text-sm font-bold text-black">Find</button>
       </form>
+
+      {loaded?.status === "ok" && !loaded.offline && loaded.number !== 100 && <ReportPage key={loaded.number} number={loaded.number} />}
 
       <details className="rounded border border-neutral-800 p-3 font-mono text-xs text-neutral-300">
         <summary className="cursor-pointer">Settings and help</summary>

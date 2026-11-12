@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { AnalyticsCard, AuditCard, ReportsCard } from "@/components/dashboard/InsightCards";
 import { TeamCard } from "@/components/dashboard/TeamCard";
 import { Button, Card, Shell, StatusBadge, errorMessage, inputClass } from "@/components/dashboard/ui";
 
@@ -18,7 +19,6 @@ export default function OrgPage() {
   const pages = useQuery(api.pages.list, { orgId: id });
   const free = useQuery(api.pages.freeNumbers, { orgId: id });
   const createPage = useMutation(api.pages.create);
-  const changePlan = useMutation(api.orgs.changePlan);
   const router = useRouter();
   const [number, setNumber] = useState<number | "">("");
   const [title, setTitle] = useState("");
@@ -135,7 +135,10 @@ export default function OrgPage() {
             </Card>
           )}
 
+          <ReportsCard orgId={id} canPublish={org.canPublish} />
+          <AnalyticsCard orgId={id} />
           {org.role === "owner" && <TeamCard orgId={id} />}
+          {org.role === "owner" && <AuditCard orgId={id} />}
 
           <Card title="Plan">
             <ul className="mb-3 space-y-1 font-mono text-xs text-neutral-300">
@@ -147,25 +150,9 @@ export default function OrgPage() {
               ))}
             </ul>
             {org.canBill ? (
-              <div className="flex flex-wrap gap-2">
-                {(Object.keys(PLAN_LIMITS) as Plan[])
-                  .filter((p) => p !== org.plan)
-                  .map((p) => (
-                    <Button
-                      key={p}
-                      variant="ghost"
-                      onClick={async () => {
-                        try {
-                          await changePlan({ orgId: id, plan: p });
-                        } catch (err) {
-                          setError(errorMessage(err));
-                        }
-                      }}
-                    >
-                      Switch to {PLAN_NAMES[p]} (demo checkout)
-                    </Button>
-                  ))}
-              </div>
+              <Link href={`/dashboard/${orgId}/billing`} className="font-mono text-sm text-cyan-300 underline">
+                Change plan (demo checkout)
+              </Link>
             ) : (
               <p className="text-xs text-neutral-400">Only the owner can change the plan.</p>
             )}

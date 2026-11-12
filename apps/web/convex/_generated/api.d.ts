@@ -9,13 +9,18 @@
  */
 
 import type * as aiUsage from "../aiUsage.js";
+import type * as audit from "../audit.js";
 import type * as lib_access from "../lib/access.js";
+import type * as lib_audit from "../lib/audit.js";
+import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_renderPage from "../lib/renderPage.js";
 import type * as orgs from "../orgs.js";
 import type * as pages from "../pages.js";
 import type * as public_ from "../public.js";
+import type * as reports from "../reports.js";
 import type * as seed from "../seed.js";
 import type * as team from "../team.js";
+import type * as traffic from "../traffic.js";
 
 import type {
   ApiFromModules,
@@ -25,13 +30,18 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   aiUsage: typeof aiUsage;
+  audit: typeof audit;
   "lib/access": typeof lib_access;
+  "lib/audit": typeof lib_audit;
+  "lib/rateLimit": typeof lib_rateLimit;
   "lib/renderPage": typeof lib_renderPage;
   orgs: typeof orgs;
   pages: typeof pages;
   public: typeof public_;
+  reports: typeof reports;
   seed: typeof seed;
   team: typeof team;
+  traffic: typeof traffic;
 }>;
 
 /**

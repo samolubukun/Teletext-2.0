@@ -2,9 +2,10 @@
 // Only owners manage the team (permission "members.manage"). Invite codes are random, single use,
 // expire after 7 days, and only their SHA-256 hash is stored.
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { fail, requireOrgAccess, requireUserId } from "./lib/access";
+import { recordAudit } from "./lib/audit";
 
 const assignableRole = v.union(v.literal("editor"), v.literal("viewer"));
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -80,6 +81,7 @@ export const createInvite = mutation({
     const code = newCode();
     const expiresAt = Date.now() + INVITE_TTL_MS;
     await ctx.db.insert("invites", { orgId, role, codeHash: await hashCode(normalizeCode(code)), createdBy: userId, expiresAt });
+    await recordAudit(ctx, orgId, userId, "team.invite", `Invite created for ${role}`);
     return { code, expiresAt };
   },
 });
@@ -90,8 +92,9 @@ export const revokeInvite = mutation({
   handler: async (ctx, { inviteId }) => {
     const invite = await ctx.db.get(inviteId);
     if (!invite) fail("not_found", "Invite not found.");
-    await requireOrgAccess(ctx, invite.orgId, "members.manage");
+    const { userId } = await requireOrgAccess(ctx, invite.orgId, "members.manage");
     await ctx.db.delete(inviteId);
+    await recordAudit(ctx, invite.orgId, userId, "team.revoke", `Invite revoked (${invite.role})`);
     return null;
   },
 });
@@ -122,25 +125,27 @@ export const acceptInvite = mutation({
     const label = (identity?.name ?? identity?.email ?? "").trim().slice(0, 80);
     await ctx.db.insert("members", { orgId: invite.orgId, userId, role: invite.role, ...(label ? { label } : {}) });
     await ctx.db.delete(invite._id);
+    await recordAudit(ctx, org._id, userId, "team.join", `Joined as ${invite.role}`);
     return { orgId: org._id, orgName: org.name };
   },
 });
 
-async function requireManageableMember(ctx: MutationCtx, memberId: Id<"members">) {
+async function requireManageableMember(ctx: MutationCtx, memberId: Id<"members">): Promise<{ member: Doc<"members">; userId: string }> {
   const member = await ctx.db.get(memberId);
   if (!member) fail("not_found", "Member not found.");
-  await requireOrgAccess(ctx, member.orgId, "members.manage");
+  const { userId } = await requireOrgAccess(ctx, member.orgId, "members.manage");
   // Owners are never changed or removed here, so an organization can never end up without one.
   if (member.role === "owner") fail("owner", "Owners cannot be changed or removed.");
-  return member;
+  return { member, userId };
 }
 
 export const setRole = mutation({
   args: { memberId: v.id("members"), role: assignableRole },
   returns: v.null(),
   handler: async (ctx, { memberId, role }) => {
-    const member = await requireManageableMember(ctx, memberId);
+    const { member, userId } = await requireManageableMember(ctx, memberId);
     await ctx.db.patch(member._id, { role });
+    await recordAudit(ctx, member.orgId, userId, "team.role", `${member.role} to ${role}`);
     return null;
   },
 });
@@ -149,8 +154,9 @@ export const removeMember = mutation({
   args: { memberId: v.id("members") },
   returns: v.null(),
   handler: async (ctx, { memberId }) => {
-    const member = await requireManageableMember(ctx, memberId);
+    const { member, userId } = await requireManageableMember(ctx, memberId);
     await ctx.db.delete(member._id);
+    await recordAudit(ctx, member.orgId, userId, "team.remove", `Removed a ${member.role}`);
     return null;
   },
 });

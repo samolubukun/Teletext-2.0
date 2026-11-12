@@ -18,6 +18,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
 import { fail, requireOrgAccess, requirePageAccess } from "./lib/access";
+import { recordAudit } from "./lib/audit";
 import { renderForOrg, searchTextOf } from "./lib/renderPage";
 import { fastextLink, pageStatus } from "./schema";
 
@@ -189,7 +190,7 @@ export const setStatus = mutation({
   args: { pageId: v.id("pages"), to: pageStatus, confirmFacts: v.optional(v.boolean()) },
   returns: v.null(),
   handler: async (ctx, { pageId, to, confirmFacts }) => {
-    const { page, org, role } = await requirePageAccess(ctx, pageId, to === "published" ? "page.publish" : "page.write");
+    const { page, org, role, userId } = await requirePageAccess(ctx, pageId, to === "published" ? "page.publish" : "page.write");
     if (!canTransition(page.status, to, { requireApproval: org.requireApproval ?? false })) {
       fail("transition", `A ${page.status} page cannot move to ${to}.`);
     }
@@ -209,6 +210,7 @@ export const setStatus = mutation({
       ...(to === "published" ? { publishAt: undefined, scheduleNote: undefined } : {}),
       ...(to === "archived" ? { publishAt: undefined, expiresAt: undefined } : {}),
     });
+    await recordAudit(ctx, org._id, userId, `page.${to}`, `Page ${page.number}: ${page.status} to ${to}`);
     return null;
   },
 });
@@ -239,7 +241,7 @@ export const setSchedule = mutation({
   args: { pageId: v.id("pages"), publishAt: optionalTime, expiresAt: optionalTime, confirmFacts: v.optional(v.boolean()) },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const { page, org, role } = await requirePageAccess(ctx, args.pageId, "page.publish");
+    const { page, org, role, userId } = await requirePageAccess(ctx, args.pageId, "page.publish");
     const now = Date.now();
     const publishAt = args.publishAt === undefined ? (page.publishAt ?? null) : args.publishAt;
     const expiresAt = args.expiresAt === undefined ? (page.expiresAt ?? null) : args.expiresAt;
@@ -268,6 +270,7 @@ export const setSchedule = mutation({
       scheduleNote: undefined,
       updatedAt: now,
     });
+    await recordAudit(ctx, org._id, userId, "page.schedule", `Page ${page.number}: publish ${publishAt === null ? "none" : new Date(publishAt).toISOString()}, expire ${expiresAt === null ? "none" : new Date(expiresAt).toISOString()}`);
     if (publishAt !== null && publishAt !== (page.publishAt ?? null)) await ctx.scheduler.runAt(publishAt, internal.pages.applySchedule, { pageId: page._id });
     if (expiresAt !== null && expiresAt !== (page.expiresAt ?? null)) await ctx.scheduler.runAt(expiresAt, internal.pages.applySchedule, { pageId: page._id });
     return null;
@@ -291,6 +294,7 @@ export const applySchedule = internalMutation({
       if (action === null) return null;
       if (action === "archive") {
         await ctx.db.patch(pageId, { status: "archived", expiresAt: undefined, publishAt: undefined, updatedAt: now });
+        await recordAudit(ctx, page.orgId, "scheduler", "page.archived", `Page ${page.number}: expired on schedule`);
         continue;
       }
       const org = await ctx.db.get(page.orgId);
@@ -304,6 +308,7 @@ export const applySchedule = internalMutation({
         return null;
       }
       await ctx.db.patch(pageId, { status: "published", publishAt: undefined, scheduleNote: undefined, updatedAt: now });
+      await recordAudit(ctx, page.orgId, "scheduler", "page.published", `Page ${page.number}: published on schedule`);
     }
     return null;
   },
@@ -374,6 +379,7 @@ export const restore = mutation({
     if (!fastext.success) fail("invalid", "That version's fastext links are not valid any more.");
     const { versionId } = await writeVersion(ctx, page, org, userId, blocks.data, fastext.data, old.uncheckedFacts);
     const created = await ctx.db.get(versionId);
+    await recordAudit(ctx, org._id, userId, "page.restore", `Page ${page.number}: restored version ${version} as version ${created?.version ?? 0}`);
     return { version: created?.version ?? 0, blocks: blocks.data, fastext: fastext.data };
   },
 });

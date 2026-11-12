@@ -105,6 +105,20 @@ export default function PosterPage() {
         </div>
       </article>
 
+      {origin && (
+        <section className="mx-auto mt-6 max-w-[640px] print:hidden" aria-label="Embed this page">
+          <h2 className="font-mono text-sm text-yellow-300">Show this page on your own website</h2>
+          <p className="mb-2 text-xs text-neutral-400">Paste this where you want it. It always shows the latest published version.</p>
+          <textarea
+            readOnly
+            rows={3}
+            className="w-full rounded border border-neutral-700 bg-neutral-950 p-2 font-mono text-xs"
+            value={`<iframe src="${origin}/embed/${data.number}" title="${data.orgName.replace(/[<>"&]/g, "")}: page ${data.number}" width="480" height="560" style="border:0" loading="lazy"></iframe>`}
+            onFocus={(e) => e.currentTarget.select()}
+          />
+        </section>
+      )}
+
       <style>{`@media print { @page { size: A4 portrait; margin: 10mm; } body { background: #fff !important; } }`}</style>
     </Shell>
   );

@@ -97,9 +97,41 @@ export default defineSchema({
     deviceClass: v.union(v.literal("mobile"), v.literal("desktop"), v.literal("other")),
   }).index("by_page", ["pageNumber"]),
 
+  /** Reader reports. orgId is the owner of the page when it was reported; rows from before it existed have none. */
   reports: defineTable({
     pageNumber: v.number(),
     reason: v.string(),
     status: v.union(v.literal("open"), v.literal("closed")),
-  }).index("by_status", ["status"]),
+    orgId: v.optional(v.id("organizations")),
+    note: v.optional(v.string()),
+    createdAt: v.optional(v.number()),
+    resolution: v.optional(v.union(v.literal("dismissed"), v.literal("archived"))),
+  })
+    .index("by_status", ["status"])
+    .index("by_org_status", ["orgId", "status"]),
+
+  /** Daily view counters per page. No IP, no user agent: only a coarse device class. */
+  viewCounts: defineTable({
+    orgId: v.id("organizations"),
+    pageNumber: v.number(),
+    /** UTC day as yyyymmdd. */
+    day: v.number(),
+    mobile: v.number(),
+    desktop: v.number(),
+    other: v.number(),
+  })
+    .index("by_page_day", ["pageNumber", "day"])
+    .index("by_org_day", ["orgId", "day"]),
+
+  /** Fixed-window counters for public writes. The key holds only salted hashes. */
+  rateLimits: defineTable({ key: v.string(), windowStart: v.number(), count: v.number() }).index("by_key", ["key"]),
+
+  /** Append-only record of sensitive actions. Holds user ids and page numbers, never page text. */
+  auditLog: defineTable({
+    orgId: v.id("organizations"),
+    actorId: v.string(),
+    action: v.string(),
+    detail: v.string(),
+    at: v.number(),
+  }).index("by_org_at", ["orgId", "at"]),
 });

@@ -2,6 +2,7 @@ import { PLAN_LIMITS, allocateRange, can, type Plan } from "@teletext/core";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { fail, requireOrgAccess, requireUserId } from "./lib/access";
+import { recordAudit } from "./lib/audit";
 import { plan } from "./schema";
 
 const MAX_ORGS_PER_USER = 3;
@@ -133,13 +134,14 @@ export const changePlan = mutation({
   args: { orgId: v.id("organizations"), plan },
   returns: v.null(),
   handler: async (ctx, { orgId, plan: next }) => {
-    const { org } = await requireOrgAccess(ctx, orgId, "org.billing");
+    const { org, userId } = await requireOrgAccess(ctx, orgId, "org.billing");
     if (org.plan !== next) {
       const published = await ctx.db.query("pages").withIndex("by_org_status", (q) => q.eq("orgId", orgId).eq("status", "published")).collect();
       if (published.length > PLAN_LIMITS[next as Plan].publishedPages) {
         fail("limit", `Archive some pages first: the ${next} plan allows ${PLAN_LIMITS[next as Plan].publishedPages} published pages.`);
       }
       await ctx.db.patch(orgId, { plan: next });
+      await recordAudit(ctx, orgId, userId, "org.plan", `Plan ${org.plan} to ${next}`);
     }
     return null;
   },
@@ -150,8 +152,9 @@ export const setRequireApproval = mutation({
   args: { orgId: v.id("organizations"), requireApproval: v.boolean() },
   returns: v.null(),
   handler: async (ctx, { orgId, requireApproval }) => {
-    await requireOrgAccess(ctx, orgId, "org.update");
+    const { userId } = await requireOrgAccess(ctx, orgId, "org.update");
     await ctx.db.patch(orgId, { requireApproval });
+    await recordAudit(ctx, orgId, userId, "org.approval", `Approval required: ${requireApproval ? "on" : "off"}`);
     return null;
   },
 });
