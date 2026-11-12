@@ -44,6 +44,20 @@ body {
   width: 100%;
 }
 
+/* Registered so the browser resolves 100cqw once on .tt-screen and passes a finished length down.
+   Unregistered, each of the ~960 cells re-resolved it (Lighthouse: Style & Layout 12 s, TBT 6.6 s). */
+@property --cell-w {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --cell-h {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 .tt-screen {
   --cell-w: calc(100cqw / 40);
   --cell-h: calc(var(--cell-w) * 1.2);

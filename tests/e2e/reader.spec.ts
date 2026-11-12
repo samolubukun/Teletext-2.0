@@ -57,7 +57,7 @@ test.describe("reader", () => {
     const cacheControl = res.headers()["cache-control"] ?? "";
     expect(cacheControl).toContain("public");
     // Vercel's edge consumes s-maxage and shows clients "public, max-age=0"; it reports caching in x-vercel-cache instead.
-    if (process.env.E2E_BASE_URL) expect(res.headers()["x-vercel-cache"]).toBeDefined();
+    if (process.env.E2E_BASE_URL?.includes("vercel.app")) expect(res.headers()["x-vercel-cache"]).toBeDefined();
     else expect(cacheControl).toContain("s-maxage");
   });
 

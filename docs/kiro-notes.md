@@ -135,3 +135,17 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
   `public, max-age=0`, reporting caching in `x-vercel-cache`. The test now checks that header when run live.
 - **Setup gotchas worth remembering:** Hexclave's hosted sign-in page never fires `load`, so tests must wait for the form
   (`waitUntil: "commit"`). The trusted-domain field wants the host only, with no trailing space.
+
+## Thu 12 Nov 2026 - Lighthouse found a real performance bug
+
+- Lighthouse 12 on the live site (mobile profile, 4x CPU slowdown): **Performance 64**, Accessibility 100, Best Practices 100, SEO 100.
+  FCP 0.8 s, LCP 1.4 s, but **Total Blocking Time 6,620 ms** and Speed Index 6.4 s. Transfer size was only 192 KiB, scripting 0.6 s.
+  The main-thread breakdown showed **Style & Layout 12.2 s** on a page with 1,071 elements.
+- Cause (found by measuring, not guessing): `--cell-w: calc(100cqw / 40)` on `.tt-screen` is an unregistered custom property,
+  so each of the ~960 cells re-resolved the container-query unit itself. Removing the cqw made style recalculation about 35x cheaper in a
+  Chrome probe; the probe was noisy, so Lighthouse is the real check.
+- Fix: two `@property` registrations (`--cell-w`, `--cell-h` as `<length>`) in `globals.css`. Local production build: **Performance 93**,
+  TBT 250 ms, Style & Layout 256 ms, Accessibility 100. Screenshots before and after look identical.
+- Lesson for the write-up: all functional tests and axe were green while the page cost 6.6 s of main-thread blocking on a throttled CPU.
+  Only a performance tool saw it. Real-device tests on cheap phones matter for exactly this reason.
+- To verify after the Vercel redeploy: rerun `npx lighthouse@12 https://teletext-2-0.vercel.app/` and record the live score here.
