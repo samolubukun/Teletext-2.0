@@ -1,7 +1,8 @@
 # AI usage rules (product, not development)
 
 ## Provider
-- Google Gemini through `@google/genai`, called only from Convex actions. Model name comes from
+- Google Gemini through `@google/genai`, called only on the server, from the Next.js route `/api/ai/condense`
+  (the browser never sees the key; Convex checks role and rate limit first). Model name comes from
   the `GEMINI_MODEL` environment variable; check the current model list before choosing.
 - Use structured output: `responseMimeType: "application/json"` with a JSON schema generated
   from the Zod schema (`z.toJSONSchema`). Still validate the response with Zod; never trust it.

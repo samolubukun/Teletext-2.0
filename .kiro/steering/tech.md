@@ -5,9 +5,13 @@
 - apps/web: Next.js 16 (App Router, `cacheComponents` on) + TypeScript strict + Tailwind 4 for the dashboard.
   The teletext screen uses its own CSS, not Tailwind.
 - Backend and database: Convex (apps/web/convex). Auth: Hexclave (formerly Stack Auth), `@hexclave/next`.
-- AI: Google Gemini via the `@google/genai` SDK, called only from Convex actions.
+- AI: Google Gemini via the `@google/genai` SDK, called only on the server from the Next.js route handler
+  `/api/ai/condense` (never from the browser). The route verifies the Hexclave token, and Convex (`aiUsage.authorize`)
+  checks the role and the per-plan rate limit. Reason: the model fallback and the 20 s timeouts are simpler to run
+  and test there. Moving the call into a Convex `internalAction` later is allowed but not required.
 - Zod for every external input. Vitest + fast-check for tests. Playwright for end-to-end.
-- Teletext display: @techandsoftware/teletext (+ teletext-service, teletext-fonts).
+- Teletext display: our own React/CSS renderer (`TeletextScreen`). The @techandsoftware libraries are AGPL/GPL and
+  this repo is MIT, so they are not used (see docs/kiro-notes.md, 10 Nov).
 - Hosting: Vercel (Next.js) + Convex cloud. Build command deploys Convex: `npx convex deploy --cmd "npm run build"`.
 
 ## Read the docs first
@@ -33,7 +37,7 @@
 - Every function declares `args` and `returns` validators.
 - Use `internalQuery` / `internalMutation` / `internalAction` for anything not called by a client
   (crons, scheduled jobs, AI calls).
-- Network calls (Gemini, Google Sheets, RSS) only in actions. Use `"use node"` only when a Node API is required.
+- Network calls from Convex (Google Sheets, RSS) only in actions. Gemini is called from the Next.js route (see Stack). Use `"use node"` only when a Node API is required.
 - Do not use `Date.now()` inside queries for filtering (it breaks caching and reactivity). Use
   `ctx.scheduler.runAt` to flip status at publish and expiry times.
 - Use indexes (`withIndex`) instead of `.filter()` on large tables.

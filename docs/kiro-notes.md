@@ -72,3 +72,54 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
 - Added: live header clock in the reader, README, specs for reader-app / offline-pwa / publisher-dashboard /
   ai-condenser, hooks (AI tests, secret guard, style guard), `npm run pre-submit`, `docs/kiro-checklist.md`.
 - Blocked: Kiro does not let the agent write `.kiro/settings/` (MCP config). Pasted by hand instead.
+
+## Thu 12 Nov 2026 - permission tests and the AI evaluation harness
+
+- Added `convex-test` suite (9 tests): two orgs, owner / editor / viewer / outsider, signed-out callers, range and
+  plan-limit rules, public read of drafts. All pass first time, so no bug found there; the value is the proof that
+  the server, not the UI, enforces roles.
+- Added the evaluation harness: 20 fake sources in `packages/ai/src/eval-cases.ts`, each with must-keep values and
+  optional meaning-level phrases. Offline tests check the cases themselves (every must-keep value is in its source)
+  and the extractive-fallback baseline (invents nothing). Live run: `npm run eval --workspace @teletext/ai`.
+
+**Scores (gemini-3.5-flash-lite, live)**
+
+| Prompt | Values kept | Invented values | Phrase checks passed | Fallbacks |
+| --- | --- | --- | --- | --- |
+| condense-v2 | 100% | 1 | 95.2% (1 of 21 missed) | 0 of 20 |
+| condense-v3 | 100% | 0 | 95.2% (1 of 21 missed) | 0 of 20 |
+
+- v2 failures the harness found: "at least 70 percent" lost "at least" (the value guard cannot see this, the phrase
+  check did), and "a ruler" became "1 ruler", which the guard flagged as an invented "1".
+- v3 adds two prompt rules (keep qualifiers; never turn words into digits). The invented "1" is gone.
+- Still open: in v3 the `exception` case misses its "except|but" phrase, and the missing phrase changes between runs
+  (model output is not deterministic). The phrase checks are regexes, so some misses may be valid rewordings.
+  Next step: read the actual drafts for the missed cases before changing the prompt or the regex.
+
+## Thu 12 Nov 2026 - Playwright reader tests and axe
+
+- Added `playwright.config.ts` and `tests/e2e/reader.spec.ts`: 12 tests on desktop and on a Pixel 7 profile (24 runs, all green).
+  They cover page 100, typing 412, the typed-digits header, fastext keys and buttons, out-of-range and missing pages,
+  the 5 KB payload and cache header, API validation, clean mode, search, offline reading with the OFFLINE COPY badge, and
+  axe (WCAG 2 A/AA, serious and critical) on `/` and `/p/412`. Run: `npm run e2e` (needs `npm run seed --workspace @teletext/web` once).
+- **Real bug found by the first run:** `/p/412` rendered two readers. The `Suspense` fallback in `app/p/[number]/[[...sub]]/page.tsx`
+  was a full `<Reader initialNumber={100} />`, so two copies mounted (duplicate screen-reader text, and the fallback could
+  rewrite the address bar to `/`). Fixed with an empty placeholder. Unit tests could never see this; the strict-mode locator error did.
+- **Test lesson:** Playwright's `context.setOffline(true)` does not stop requests made by the service worker itself, so the
+  worker still reached the server and no OFFLINE COPY badge appeared. The service worker was fine. The test now aborts
+  `/api/pages/**` with `context.route` plus `PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1`.
+- axe found no serious or critical issues on the reader (only those two pages and those two rule tags were checked).
+- Open: the server log shows `InvariantError: cookies must not be used within a Client Component` while the production
+  build serves pages. The reader works, but the source is probably the dashboard routes (Hexclave). Not investigated yet.
+
+## Thu 12 Nov 2026 - tidy before deploy
+
+- **Steering vs code:** `tech.md` and `ai-usage.md` said Gemini is called "only from Convex actions", but it runs in the
+  Next.js route `/api/ai/condense`. Updated the docs to match the code (and said why). `tech.md` also still named the AGPL
+  `@techandsoftware/teletext` display library, which we replaced with our own renderer on 10 Nov; fixed that line too.
+  Lesson for the write-up: steering docs drift from the code as decisions change, and a reader will notice.
+- **The `cookies()` InvariantError:** it appears only during `next build` (static page generation), never at runtime. Source:
+  Hexclave's SDK (`@hexclave/next` `lib/cookie.js` calls `cookies()` from `next/headers`). Not our code, and the build
+  exits 0. Added a Playwright check that `/dashboard` loads signed out with no page error or "Application error" text
+  (26 tests green now). Left as known build-log noise rather than patching the SDK.
+- Deployment will use the existing Convex dev deployment (decision: simplest for a hackathon demo). `docs/deploy.md` rewritten for that.
