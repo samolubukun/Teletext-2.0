@@ -35,6 +35,12 @@ Built for **Kiroween 2026** (category: Resurrection) by one developer, with Kiro
 - **Fact guard:** every number, date, time, amount and name in the AI draft is matched to a source sentence.
   Values that are not in the source are flagged red and must be confirmed before publishing.
 - Draft, Review, Published and Archived states, roles (Owner, Editor, Viewer), plan limits enforced on the server.
+- **Version history:** every save is a version; restoring copies an old one into a new version, so nothing is lost.
+- **Scheduled publish and expiry:** pick a time and the page publishes or archives itself, with nobody signed in.
+  Expired pages are never served, even if the job runs late.
+- **Team:** the owner invites editors or viewers with one-time codes (7 days, single use, only a hash is stored),
+  changes roles and removes members. Owners can never be removed.
+- **QR poster:** a printable A4 poster per page with a QR code, the address and a big page number.
 
 ## Stack
 
@@ -92,16 +98,26 @@ is refused.
 ## Tests
 
 ```bash
-npm test                    # unit and property-based tests (core + ai)
-FC_RUNS=10000 npm test      # the heavy run: 10,000 generated cases per property
+npm test                    # unit, property-based and Convex tests (core, ai, web)
+FC_RUNS=10000 npm test      # the heavy run: 10,000 generated cases per property (core alone takes about 6 minutes)
 npm run typecheck
 npm run check:boundary      # packages/core must stay pure
 npm run pre-submit          # license, .kiro, secrets and README checks
+npm run e2e                 # Playwright reader, offline and axe tests against a local production build
+npm run eval --workspace @teletext/ai   # AI condenser evaluation, 20 cases (needs GEMINI_LIVE=1 and GEMINI_API_KEY)
 ```
 
-Property-based tests (fast-check) cover the renderer invariants (every row is exactly 40 cells, no word is
-split, pagination loses nothing, normalization is idempotent, and more), the reader's page-number entry,
-page-range allocation, the publish workflow, the permission table and the fact guard.
+Run the end-to-end tests against a deployed site with `E2E_BASE_URL=https://your-site npx playwright test`.
+The `*.live.spec.ts` files sign in with the demo account and exercise the full publish path, team invites, the QR poster
+and a real scheduled publish and expiry.
+
+- **Property-based tests (fast-check)** cover the renderer invariants (every row is exactly 40 cells, no word is
+  split, pagination loses nothing, normalization is idempotent, and more), the reader's page-number entry,
+  page-range allocation, the publish workflow, the permission table, the schedule rules and the fact guard.
+- **Convex tests (`convex-test`)** cover permissions with two organizations and an owner, editor, viewer and outsider,
+  version history, team invites and scheduling driven by fake timers.
+- **AI evaluation:** 20 fake source documents with the facts that must survive; the score for each prompt version
+  is recorded in `docs/kiro-notes.md`.
 
 ## How it was built with Kiro
 
@@ -110,9 +126,11 @@ See [`.kiro/`](.kiro) and [`docs/kiro-notes.md`](docs/kiro-notes.md).
 - **Specs:** one per module, each with requirements, design, tasks, and correctness properties written
   before the code.
 - **Steering:** product, teletext style rules, tech rules, testing, security, AI usage, CardScript.
-- **Hooks:** core tests on save, boundary guard, spec sync.
-- **Property-based testing:** found real bugs that example tests missed (see the notes).
-- **MCP:** the Convex MCP server lets Kiro inspect tables and run functions on the deployment.
+- **Hooks:** core tests on save, boundary guard, spec sync, AI type-check and tests, style guard, secret guard.
+- **Property-based testing:** found real bugs that example tests missed, including two that only appeared at 10,000 runs
+  (see the notes).
+- **MCP:** the Convex MCP server (`.kiro/settings/mcp.json`) is used to read the live schema and data, which found a
+  bug in my own live test.
 
 ## Credits and licenses
 

@@ -169,7 +169,7 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
   but the security steering doc asks for rate limits on lookups; add one if time allows.
 - Known lint debt (older code, not from today): `react-hooks/set-state-in-effect` in `Reader.tsx` and the editor page, and a plain `<a href="/dashboard">` in `Reader.tsx`. CI does not lint the web app yet.
 
-## Thu 12 Nov 2026 - scheduled publishing, and three bugs from 10,000-run properties
+## Thu 12 Nov 2026 - scheduled publishing, and three bugs from stronger properties (two only appeared at 10,000 runs)
 
 - Built scheduled publish and expiry (D6). Pure rules first in `packages/core/src/schedule.ts` with properties S1-S4 written before the Convex code;
   then `pages.setSchedule` (owner and editor), the `applySchedule` job fired by `ctx.scheduler.runAt`, a Schedule card, and a guard in
