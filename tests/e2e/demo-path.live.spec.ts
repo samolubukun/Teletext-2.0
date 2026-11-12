@@ -1,6 +1,6 @@
 // Demo path against a LIVE site: sign in as the judge, paste, condense (real Gemini call), publish, read, archive.
 // Run: $env:E2E_BASE_URL="https://teletext-2-0.vercel.app"; npx playwright test demo-path --project=desktop
-// It reuses one page titled "E2E demo path" in Greenfield High and archives it at the end, so it never fills the range.
+// It always uses page 449 in Greenfield High and archives it at the end, so it never fills the range.
 import { expect, test } from "@playwright/test";
 
 test.skip(!process.env.E2E_BASE_URL, "needs E2E_BASE_URL (a deployed site)");
@@ -8,6 +8,7 @@ test.skip(!process.env.E2E_BASE_URL, "needs E2E_BASE_URL (a deployed site)");
 const EMAIL = process.env.E2E_JUDGE_EMAIL ?? "judge@example.com";
 const PASSWORD = process.env.E2E_JUDGE_PASSWORD ?? "judge@example.com";
 const TITLE = "E2E demo path";
+const TEST_PAGE = 449;
 const SOURCE = `Dear parents,
 The Term 1 reports for JSS3 will be ready on Friday 13 November 2026.
 Collect them in the Main Hall between 9am and 3pm. Please bring your child's ID card.
@@ -33,11 +34,14 @@ test("sign in, condense, publish, read, archive", async ({ page, browser }) => {
   await expect(page.getByRole("heading", { name: "Greenfield High" })).toBeVisible();
   await expect(page.getByText("Your pages: 400-449")).toBeVisible();
 
-  // 3. Open the reusable test page, or create it.
-  const existing = page.getByRole("link", { name: TITLE, exact: false }).first();
-  if (await existing.isVisible().catch(() => false)) {
-    await existing.click();
+  // 3. Always use page 449 (the last number of the range), so repeated runs never use up the demo school's numbers.
+  // Do not look the page up by title: condensing renames it after the AI's heading.
+  await expect(page.getByRole("heading", { name: "Pages" })).toBeVisible();
+  const row = page.locator("tr", { has: page.getByRole("cell", { name: String(TEST_PAGE), exact: true }) });
+  if (await row.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    await row.getByRole("link").click();
   } else {
+    await page.getByLabel("Page number").selectOption(String(TEST_PAGE));
     await page.getByLabel("Title").fill(TITLE);
     await page.getByRole("button", { name: "Create page" }).click();
   }

@@ -184,3 +184,15 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
   A real fact-guard defect, found by a property written for a different purpose. Fixed with `\b`.
 - Gate A evidence: all 57 core tests pass at FC_RUNS=10000 (357 s); ai package 26 tests pass at 10,000.
 - Test lesson: after changing the public route, the first e2e run failed 2 of 26 on cold start and passed 26 of 26 on re-run; the assertion timeout is now 10 s.
+
+## Thu 12 Nov 2026 - first real use of the Convex MCP server
+
+- Connected `.kiro/settings/mcp.json` (Convex MCP, `npx convex mcp start`). From the agent I could list deployments, read the live schema,
+  page through tables and run one-off read-only queries against the dev deployment, without opening the Convex dashboard.
+- **What it found:** (1) confirmed `judge@example.com` is recorded as owner of Greenfield High; (2) the live demo-path test had been leaving a new archived
+  page behind on every run (401, 402, 403). I had written in the notes that it reused one page. It looked the page up by title, but condensing renames the page
+  to the AI's heading, so the lookup missed and it created another. The test now always uses page 449. Two live runs afterwards left exactly one page (449, archived),
+  checked with a one-off query. Lesson: I stated a behaviour in the notes without checking the data; the MCP let me check it in seconds.
+- **What it could not do:** the production deployment shows as read-only, and there is no delete tool, so the three leftover archived pages (401-403) stay in the
+  demo school's list until a delete mutation exists. The one-off query tool is read-only, so it cannot fix data either.
+- No Kiro Power for Convex, Vercel or GitHub showed up in the Powers list on this machine, so none is installed yet.
