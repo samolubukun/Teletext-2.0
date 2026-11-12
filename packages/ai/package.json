@@ -12,6 +12,7 @@
   },
   "scripts": {
     "test": "vitest run",
+    "eval": "vitest run test/eval.live.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
