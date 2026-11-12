@@ -196,3 +196,21 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
 - **What it could not do:** the production deployment shows as read-only, and there is no delete tool, so the three leftover archived pages (401-403) stay in the
   demo school's list until a delete mutation exists. The one-off query tool is read-only, so it cannot fix data either.
 - No Kiro Power for Convex, Vercel or GitHub showed up in the Powers list on this machine, so none is installed yet.
+
+## Thu 12 Nov 2026 - QR poster, and live checks of Team, poster and scheduling
+
+- **QR poster** (`/dashboard/[orgId]/pages/[pageId]/poster`): QR code (MIT `qrcode`, error correction H), big page number, address, print button, an ink-saving
+  and a teletext theme. The tests decode a real QR image back with an independent decoder (`jsqr`, dev-only, Apache-2.0) and require the exact link.
+  A probe measured how much damage the code survives: a block of 12% of the width wiped out at five positions still scans; 18% over the alignment pattern does not.
+  My first damage test used an unlucky position and failed; I measured before deciding what to claim. ESLint also made me replace a setState-in-effect with `useSyncExternalStore`.
+- **Live results on https://teletext-2-0.vercel.app:**
+  - Team: the owner creates an invite code and revokes it (the invites table ended empty, checked through the Convex MCP).
+  - Poster: the QR code on the real poster decodes to `https://teletext-2-0.vercel.app/p/449`.
+  - Scheduling: a draft scheduled 2 minutes ahead appeared in the public API at its time with nobody clicking, then disappeared at its expiry time (5.6 min test).
+    A first, failed run also proved the scheduler works without any browser: it left page 449 scheduled, and later the database showed it archived 10 ms after its
+    `expiresAt`, with the schedule fields cleared.
+- **Bug found by the live test:** the Schedule card was keyed on its own publish and expiry times, so every successful save remounted it and threw away the
+  "Schedule saved" message. The save itself worked (the database had the times). Now keyed on status and failure note only. Unit tests could not see this; a real browser did.
+- Test hygiene: the redirect to Hexclave's hosted sign-in can take over 30 s on a freshly deployed site, so the timeout is 90 s; revoking invites tolerates buttons that
+  vanish as the list updates live.
+- Postman: the Postman power was mentioned as available but is not installed in this Kiro; an API collection for `/api/pages` and `/api/search` would fit if it is added.

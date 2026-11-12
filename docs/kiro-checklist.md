@@ -9,8 +9,8 @@ and `docs/screenshots/`.
 | **Steering** | 7 docs: product, teletext-style, tech, testing, security, ai-usage, cardscript (file-match). | Note which doc changed Kiro's output most (candidate: `tech.md` "read the Next.js 16 docs first") |
 | **Hooks** | Core tests on save, Boundary guard, Spec sync, AI type-check and tests, Style guard, Secret guard (`node scripts/pre-submit.mjs --secrets-only`). | Screenshot one hook catching a real problem |
 | **Property-based testing** | 15 renderer properties plus reader entry, range allocation, workflow, plan limits, permissions and fact-guard properties (about 60 tests). | Raise to `FC_RUNS=10000` before submission; keep the shrunk P8 counterexample as a regression test (done) |
-| **MCP** | Convex MCP server is the planned source. Config file is `.kiro/settings/mcp.json` (see below). | Use it once for a real task and write down one thing it could not do |
-| **Powers** | None installed. | Check the Powers list in Kiro for Convex, Vercel or GitHub and install if one fits |
+| **MCP** | Convex MCP server connected (`.kiro/settings/mcp.json`, committed). Used to read the live schema, confirm the judge account owns Greenfield High, and find that the live test left pages behind (fixed). Limit found: read-only on production, no delete tool. | Nothing required; use it again when debugging |
+| **Powers** | None installed. No Convex, Vercel or GitHub power appears in this Kiro. A Postman power was mentioned. | Optional: install Postman and build an API collection for /api/pages and /api/search |
 | **Custom agent** (optional) | none | A "content reviewer" agent whose instructions are `teletext-style.md` |
 | **IDE vs CLI** | IDE only so far | Try the CLI once and say which you preferred for what |
 
