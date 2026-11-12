@@ -82,6 +82,26 @@ describe("fact guard properties", () => {
   });
 });
 
+describe("regressions found by property tests", () => {
+  it("A5 regression: uppercasing the fallback title must not invent a weekday (source 'MOn' became 'MON')", () => {
+    // Shrunk counterexample from FC_RUNS=10000, seed -1500802222.
+    const text = "MOn";
+    const draft = blocksToText(extractiveSummary(text));
+    expect(factGuard(text, draft).unmatched).toEqual([]);
+    expect(draft).not.toContain("MON\n");
+  });
+
+  it("P-E2 regression: a name never ends in the middle of a word ('Aa AbA' is not the name 'Aa Ab')", () => {
+    // Shrunk counterexample from FC_RUNS=10000, seed -1307602928.
+    expect(extractValues("Aa AbA").filter((v) => v.kind === "name")).toEqual([]);
+    expect(extractValues("Mrs Adaeze Okafor called.").some((v) => v.kind === "name" && v.raw === "Adaeze Okafor")).toBe(true);
+  });
+
+  it("the fallback still uppercases ordinary titles", () => {
+    expect(blocksToText(extractiveSummary("Term dates are out.\nSchool opens on Mon 12 Nov."))).toContain("TERM DATES ARE OUT");
+  });
+});
+
 describe("fact guard examples", () => {
   const src = "Term 1 reports can be collected on Friday 13 November from 9am to 3pm in the Main Hall. Fees of N2,500 are due. Call 0800 000 0000.";
 

@@ -134,7 +134,8 @@ const RULES: Rule[] = [
 
 // Names never span lines, colons or commas (found by the first live Gemini run: labels on separate
 // lines such as "Where" / "Main Hall" / "Fees" were glued into one fake name).
-const NAME = /\b[A-Z][a-z]+(?:[ \t]+(?:of|de|van|da)\b)?(?:[ \t]+(?:[A-Z][a-z]+|[A-Z]\.))+/g;
+// Each name word ends at a word boundary: without it "Aa AbA" yielded the partial name "Aa Ab" (found by property P-E2 at 10,000 runs).
+const NAME = /\b[A-Z][a-z]+\b(?:[ \t]+(?:of|de|van|da)\b)?(?:[ \t]+(?:[A-Z][a-z]+\b|[A-Z]\.))+/g;
 /** Capitalised sentence starters and labels that are not part of a name. */
 const NAME_STOP_WORDS = new Set([
   "The", "A", "An", "Dear", "Please", "Our", "Your", "This", "These", "All", "For", "From", "On", "At", "In", "To",

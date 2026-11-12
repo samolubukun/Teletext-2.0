@@ -20,7 +20,16 @@ function titleFrom(text: string): string {
     words.push(w.replace(/[.!?:;,]+$/, ""));
   }
   const title = words.join(" ").trim();
-  return title ? title.toUpperCase() : "NOTICE";
+  if (!title) return "NOTICE";
+  // Uppercasing can create a value the source never had: "MOn" -> "MON" reads as Monday (property A5, found at 10,000 runs).
+  // Keep the original case when it would change which values the title contains.
+  const upper = title.toUpperCase();
+  return sameValues(title, upper) ? upper : title;
+}
+
+function sameValues(a: string, b: string): boolean {
+  const keys = (s: string) => extractValues(s).map((v) => v.key).sort().join("|");
+  return keys(a) === keys(b);
 }
 
 export function extractiveSummary(source: string, maxChars = 700): Block[] {
