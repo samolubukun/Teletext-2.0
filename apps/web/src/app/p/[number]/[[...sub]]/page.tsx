@@ -13,7 +13,8 @@ async function ReaderAt({ params }: { params: Promise<{ number: string; sub?: st
 export default function ShortLink(props: PageProps<"/p/[number]/[[...sub]]">) {
   return (
     <main>
-      <Suspense fallback={<Reader initialNumber={100} />}>
+      {/* The fallback must not be a second Reader: it would fetch page 100 and rewrite the address bar. */}
+      <Suspense fallback={<div className="mx-auto w-full max-w-3xl px-2 py-3" aria-busy="true" />}>
         <ReaderAt params={props.params} />
       </Suspense>
     </main>
