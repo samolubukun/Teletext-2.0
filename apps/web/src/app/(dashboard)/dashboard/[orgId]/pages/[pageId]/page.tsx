@@ -354,7 +354,9 @@ export default function EditorPage() {
 
           {data.canPublish && (
             <ScheduleCard
-              key={`${data.status}-${data.publishAt ?? ""}-${data.expiresAt ?? ""}`}
+              // Remount only when the server changes the schedule on its own (a job published, archived or failed).
+              // Keying on the times themselves would remount after every save and wipe the "Schedule saved" message.
+              key={`${data.status}-${data.scheduleNote ?? ""}`}
               pageId={data.pageId}
               status={data.status}
               publishAt={data.publishAt}

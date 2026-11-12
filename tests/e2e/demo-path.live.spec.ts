@@ -21,7 +21,7 @@ test("sign in, condense, publish, read, archive", async ({ page, browser }) => {
 
   // 1. Sign in through Hexclave's hosted page (it never fires a load event, so wait for the form).
   await page.goto("/dashboard", { waitUntil: "commit" });
-  await page.waitForURL(/built-with-hexclave\.com/, { waitUntil: "commit", timeout: 30_000 });
+  await page.waitForURL(/built-with-hexclave\.com/, { waitUntil: "commit", timeout: 90_000 });
   await page.locator('input[type="email"]').fill(EMAIL, { timeout: 45_000 });
   await page.locator('input[type="password"]').fill(PASSWORD);
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
