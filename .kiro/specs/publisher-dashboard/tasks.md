@@ -8,7 +8,7 @@
 - [x] 5. Templates (Notice, Results table, Alert, Timetable, FAQ, Events)
 - [x] 6. Validation panel using renderer warnings
 - [x] 7. Publish flow, plan limits, fact confirmation, mock upgrade (D4)
-- [ ] 8. Version history UI and restore (D5)
+- [x] 8. Version history UI and restore (D5): `pages.versions`, `pages.restore`, editor card; 4 convex-test cases
 - [ ] 9. Scheduled publish and expiry with `ctx.scheduler.runAt` (D6)
 - [x] 10. Fastext editor
 - [ ] 10a. QR code and printable poster

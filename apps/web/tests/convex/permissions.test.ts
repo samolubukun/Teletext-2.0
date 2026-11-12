@@ -96,6 +96,67 @@ describe("convex permissions", () => {
     expect(await t.query(api.public.page, { number })).not.toBeNull();
   });
 
+  describe("version history (D5)", () => {
+    const first = [{ type: "heading", level: 1, text: "TERM DATES" }, { type: "paragraph", text: "School opens on Mon 12 Nov." }];
+    const second = [{ type: "heading", level: 1, text: "TERM DATES" }, { type: "paragraph", text: "School opens on Tue 13 Nov." }];
+
+    async function twoSaves() {
+      const detail = await asOwner(t).query(api.pages.get, { pageId: pageA });
+      const a = await asOwner(t).mutation(api.pages.save, { pageId: pageA, blocks: first, fastext: detail.fastext });
+      const b = await asOwner(t).mutation(api.pages.save, { pageId: pageA, blocks: second, fastext: detail.fastext });
+      return { detail, a, b };
+    }
+
+    it("D5: restoring version N makes the page content exactly the content of version N, as a new version", async () => {
+      const { a, b } = await twoSaves();
+      const restored = await asEditor(t).mutation(api.pages.restore, { pageId: pageA, version: a.version });
+      expect(restored.version).toBe(b.version + 1);
+      expect(restored.blocks).toEqual(first);
+      const now = await asOwner(t).query(api.pages.get, { pageId: pageA });
+      expect(now.blocks).toEqual(first);
+      expect(now.version).toBe(b.version + 1);
+      const list = await asOwner(t).query(api.pages.versions, { pageId: pageA });
+      expect(list[0]).toMatchObject({ version: b.version + 1, isCurrent: true });
+      expect(list.filter((v) => v.isCurrent)).toHaveLength(1);
+      // History is never rewritten: the old versions are all still there.
+      expect(list.map((v) => v.version)).toContain(a.version);
+      expect(list.map((v) => v.version)).toContain(b.version);
+    });
+
+    it("a published page shows the restored content to the public", async () => {
+      const { a } = await twoSaves();
+      await asOwner(t).mutation(api.pages.setStatus, { pageId: pageA, to: "published" });
+      const { number } = await asOwner(t).query(api.pages.get, { pageId: pageA });
+      await asOwner(t).mutation(api.pages.restore, { pageId: pageA, version: a.version });
+      const pub = await t.query(api.public.page, { number });
+      expect(JSON.stringify(pub?.pages)).toContain("Mon 12 Nov");
+      expect(JSON.stringify(pub?.pages)).not.toContain("Tue 13 Nov");
+    });
+
+    it("viewers and outsiders can neither restore nor (outsiders) list versions", async () => {
+      const { a } = await twoSaves();
+      await rejectsWith(asViewer(t).mutation(api.pages.restore, { pageId: pageA, version: a.version }), "forbidden");
+      await rejectsWith(asOutsider(t).mutation(api.pages.restore, { pageId: pageA, version: a.version }), "forbidden");
+      await rejectsWith(asOwnerB(t).mutation(api.pages.restore, { pageId: pageA, version: a.version }), "forbidden");
+      await rejectsWith(asOutsider(t).query(api.pages.versions, { pageId: pageA }), "forbidden");
+      expect(await asViewer(t).query(api.pages.versions, { pageId: pageA })).not.toHaveLength(0);
+    });
+
+    it("an unknown version number is rejected, and a version of another page cannot be restored", async () => {
+      await twoSaves();
+      await rejectsWith(asOwner(t).mutation(api.pages.restore, { pageId: pageA, version: 999 }), "not_found");
+      const orgRow = await asOwner(t).query(api.orgs.get, { orgId: orgA });
+      const other = await asOwner(t).mutation(api.pages.create, { orgId: orgA, number: orgRow.rangeStart + 1, title: "Other" });
+      // Page A has 3 versions (create + 2 saves). Give the other page 6, so version 6 exists ONLY on the other page.
+      let latestOther = 0;
+      for (let i = 0; i < 5; i++) latestOther = (await asOwner(t).mutation(api.pages.save, { pageId: other, blocks: first, fastext: [] })).version;
+      expect(latestOther).toBe(6);
+      const versionsOfA = (await asOwner(t).query(api.pages.versions, { pageId: pageA })).map((v) => v.version);
+      expect(versionsOfA).not.toContain(latestOther);
+      await rejectsWith(asOwner(t).mutation(api.pages.restore, { pageId: pageA, version: latestOther }), "not_found");
+    });
+  });
+
   it("page numbers are unique and must be inside the organization's range", async () => {
     const { number, rangeEnd } = await asOwner(t).query(api.pages.get, { pageId: pageA });
     await rejectsWith(asOwner(t).mutation(api.pages.create, { orgId: orgA, number, title: "dup" }), "taken");

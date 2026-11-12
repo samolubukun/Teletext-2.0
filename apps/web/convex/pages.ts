@@ -205,3 +205,62 @@ export const setLive = mutation({
     return null;
   },
 });
+
+const MAX_VERSIONS_LISTED = 30;
+
+/** Newest first. Reader-safe: no user ids, only whether the caller made the version. */
+export const versions = query({
+  args: { pageId: v.id("pages") },
+  returns: v.array(
+    v.object({
+      version: v.number(),
+      createdAt: v.number(),
+      byMe: v.boolean(),
+      errorCount: v.number(),
+      warningCount: v.number(),
+      isCurrent: v.boolean(),
+    }),
+  ),
+  handler: async (ctx, { pageId }) => {
+    const { page, userId } = await requirePageAccess(ctx, pageId, "page.read");
+    const rows = await ctx.db
+      .query("pageVersions")
+      .withIndex("by_page_version", (q) => q.eq("pageId", pageId))
+      .order("desc")
+      .take(MAX_VERSIONS_LISTED);
+    return rows.map((r) => ({
+      version: r.version,
+      createdAt: r._creationTime,
+      byMe: r.createdBy === userId,
+      errorCount: r.errorCount,
+      warningCount: r.warningCount,
+      isCurrent: r._id === page.currentVersionId,
+    }));
+  },
+});
+
+/**
+ * Restore (D5): copies the content of an older version into a NEW version, so history is never rewritten.
+ * Needs the same permission as saving. The version is looked up by (pageId, version), so a version of
+ * another page can never be restored here.
+ */
+export const restore = mutation({
+  args: { pageId: v.id("pages"), version: v.number() },
+  returns: v.object({ version: v.number(), blocks: v.any(), fastext: v.array(fastextLink) }),
+  handler: async (ctx, { pageId, version }) => {
+    const { page, org, userId } = await requirePageAccess(ctx, pageId, "page.write");
+    const old = await ctx.db
+      .query("pageVersions")
+      .withIndex("by_page_version", (q) => q.eq("pageId", pageId).eq("version", version))
+      .unique();
+    if (!old) fail("not_found", `Version ${version} does not exist.`);
+    // Re-validate: the content rules may have changed since that version was saved.
+    const blocks = blocksSchema.safeParse(old.blocks);
+    if (!blocks.success) fail("invalid", "That version can no longer be restored because its content is not valid any more.");
+    const fastext = fastextLinkSchema.array().max(4).safeParse(old.fastext);
+    if (!fastext.success) fail("invalid", "That version's fastext links are not valid any more.");
+    const { versionId } = await writeVersion(ctx, page, org, userId, blocks.data, fastext.data, old.uncheckedFacts);
+    const created = await ctx.db.get(versionId);
+    return { version: created?.version ?? 0, blocks: blocks.data, fastext: fastext.data };
+  },
+});

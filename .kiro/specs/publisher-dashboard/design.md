@@ -27,7 +27,7 @@ Convex providers, so the public reader stays small. The browser gets a Convex to
 | D2 | Only the allowed status moves succeed | tested |
 | D3 | A page number outside the organization's range is always rejected | implemented in `pages.create`; open: convex-test |
 | D4 | After any sequence of publish and archive actions, the published count never exceeds the plan limit | tested (pure rule); open: end-to-end |
-| D5 | Restoring version N then reading the page gives exactly the content of version N | open (restore not built) |
+| D5 | Restoring version N then reading the page gives exactly the content of version N | tested (convex-test): restore copies version N into a new version; permissions and cross-page lookups checked |
 | D6 | An expired page is never returned by the public API | open (expiry not built) |
 | D7 | For every role and action pair, the permission function matches the permission table | tested |
 

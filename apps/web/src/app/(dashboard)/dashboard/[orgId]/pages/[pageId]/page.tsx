@@ -34,6 +34,8 @@ export default function EditorPage() {
   const save = useMutation(api.pages.save);
   const setStatus = useMutation(api.pages.setStatus);
   const setLive = useMutation(api.pages.setLive);
+  const versions = useQuery(api.pages.versions, { pageId: pageId as Id<"pages"> });
+  const restore = useMutation(api.pages.restore);
   const hexclave = useHexclaveApp();
   const condense = async (args: { orgId: string; source: string }): Promise<CondenseResult> => {
     const token = await hexclave.getConvexClientAuth({})({ forceRefreshToken: false });
@@ -259,6 +261,53 @@ export default function EditorPage() {
               <FactPanel report={facts} onAddBack={(sentence) => change([...blocks, { type: "paragraph", text: sentence }])} />
             </Card>
           )}
+
+          <Card title="Version history">
+            {versions === undefined ? (
+              <p className="text-sm text-neutral-400">Loading...</p>
+            ) : (
+              <>
+                <p className="mb-2 text-xs text-neutral-400">
+                  Every save is a version. Restoring copies an old version into a new one, so nothing is lost.
+                  {data.status === "published" ? " This page is published: readers see a restored version straight away." : ""}
+                </p>
+                <ul className="flex max-h-56 flex-col gap-1 overflow-y-auto font-mono text-xs">
+                  {versions.map((v) => (
+                    <li key={v.version} className="flex items-center justify-between gap-2 rounded border border-neutral-800 px-2 py-1">
+                      <span>
+                        <strong className={v.isCurrent ? "text-green-400" : "text-cyan-300"}>v{v.version}</strong>{" "}
+                        <span className="text-neutral-400">{new Date(v.createdAt).toLocaleString()}</span>
+                        {v.byMe ? <span className="text-neutral-500"> - you</span> : null}
+                        {v.errorCount > 0 ? <span className="text-red-400"> - {v.errorCount} error(s)</span> : null}
+                        {v.isCurrent ? <span className="text-green-400"> - current</span> : null}
+                      </span>
+                      {data.canWrite && !v.isCurrent && (
+                        <Button
+                          variant="ghost"
+                          className="!px-2 !py-1 !text-xs"
+                          disabled={busy !== null}
+                          aria-label={`Restore version ${v.version}`}
+                          onClick={() =>
+                            run("restore", async () => {
+                              if (dirty && !window.confirm("You have unsaved changes. Restoring will replace them. Continue?")) return;
+                              const r = await restore({ pageId: data.pageId, version: v.version });
+                              setBlocks(r.blocks as Block[]);
+                              setFastext(r.fastext);
+                              setAiSource(null);
+                              setDirty(false);
+                              setMessage({ kind: "ok", text: `Restored version ${v.version} as new version ${r.version}.` });
+                            })
+                          }
+                        >
+                          Restore
+                        </Button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </Card>
 
           <Card title="Fastext buttons">
             <div className="grid gap-2">

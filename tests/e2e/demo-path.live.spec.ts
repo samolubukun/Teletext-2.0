@@ -72,7 +72,16 @@ test("sign in, condense, publish, read, archive", async ({ page, browser }) => {
   await expect(readerPage.locator("section.sr-only")).toContainText("N2,500");
   await reader.close();
 
-  // 7. Clean up so the plan limit and the public index stay tidy.
+  // 7. Version history: the page has several versions; restoring an older one creates a new version.
+  await expect(page.getByRole("heading", { name: "Version history" })).toBeVisible();
+  const restoreButtons = page.getByRole("button", { name: /^Restore version \d+$/ });
+  await expect(restoreButtons.first()).toBeVisible({ timeout: 15_000 });
+  const label = (await restoreButtons.last().getAttribute("aria-label")) ?? "";
+  const oldVersion = label.match(/\d+/)?.[0];
+  await restoreButtons.last().click();
+  await expect(page.getByRole("status")).toContainText(`Restored version ${oldVersion} as new version`);
+
+  // 8. Clean up so the plan limit and the public index stay tidy.
   await page.getByRole("button", { name: "Archive (unpublish)" }).click();
   await expect(page.getByRole("status")).toContainText("Status changed to archived");
 });
