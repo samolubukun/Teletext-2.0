@@ -12,5 +12,5 @@
 - [x] 8. Safari and iOS: avoided by design (no SVG mosaics); still to verify on a real iPhone
 - [x] 9. Page 100 index (one screen), keyword search, page-number search
 - [x] 10. Live page refresh, live header clock
-- [ ] 11. Playwright: type 412, see the page, use fastext, go offline
+- [x] 11. Playwright: type 412, see the page, use fastext, go offline (tests/e2e/reader.spec.ts, desktop + Pixel 7)
 - [ ] 12. Real-device test (low-end Android and iPhone)

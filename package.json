@@ -16,7 +16,12 @@
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+    "e2e": "playwright test",
     "check:boundary": "node scripts/check-core-boundary.mjs",
     "pre-submit": "node scripts/pre-submit.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.0"
   }
 }

@@ -6,6 +6,6 @@
 - [x] 4. Strategies per route type, "Updated" time and "OFFLINE COPY" badge
 - [x] 5. "Save this range for offline" (progress indicator still open)
 - [ ] 6. Update prompt flow
-- [ ] 7. Playwright offline tests (go offline, reload, navigate) covering O3
+- [~] 7. Playwright offline tests: read-once pages open offline with the badge (done); offline reload of a deep link is not covered
 - [ ] 8. Lighthouse CI check in GitHub Actions
 - [ ] 9. Verify install and offline behaviour on a real phone (the service worker only runs in production builds)

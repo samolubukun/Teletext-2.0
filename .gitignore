@@ -29,3 +29,6 @@ Thumbs.db
 
 # Private planning document (never commit)
 /Can Teletext 2.0 Win Kiroween 2026.md
+
+test-results/
+playwright-report/
