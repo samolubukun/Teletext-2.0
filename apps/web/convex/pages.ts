@@ -2,6 +2,7 @@ import {
   PLAN_LIMITS,
   allowedTransitions,
   blocksSchema,
+  canPublishNow,
   canPublishMore,
   canTransition,
   defaultFastext,
@@ -85,7 +86,10 @@ export const get = query({
       blocks: version?.blocks ?? [],
       fastext: version?.fastext ?? defaultFastext(page.number, org.helpPage ?? org.rangeStart),
       uncheckedFacts: version?.uncheckedFacts ?? 0,
-      nextStatuses: allowedTransitions(page.status, { requireApproval: org.requireApproval ?? false }),
+      // Do not offer a button the server would refuse (D8).
+      nextStatuses: allowedTransitions(page.status, { requireApproval: org.requireApproval ?? false }).filter(
+        (s) => s !== "published" || canPublishNow(role, { requireApproval: org.requireApproval ?? false }),
+      ),
       canWrite: role !== "viewer",
       canPublish: role !== "viewer",
       publishAt: page.publishAt,
@@ -185,9 +189,12 @@ export const setStatus = mutation({
   args: { pageId: v.id("pages"), to: pageStatus, confirmFacts: v.optional(v.boolean()) },
   returns: v.null(),
   handler: async (ctx, { pageId, to, confirmFacts }) => {
-    const { page, org } = await requirePageAccess(ctx, pageId, to === "published" ? "page.publish" : "page.write");
+    const { page, org, role } = await requirePageAccess(ctx, pageId, to === "published" ? "page.publish" : "page.write");
     if (!canTransition(page.status, to, { requireApproval: org.requireApproval ?? false })) {
       fail("transition", `A ${page.status} page cannot move to ${to}.`);
+    }
+    if (to === "published" && !canPublishNow(role, { requireApproval: org.requireApproval ?? false })) {
+      fail("approval", "This organization requires approval. Send the page for review; the owner publishes it.");
     }
     const now = Date.now();
     if (to === "published") {
@@ -232,10 +239,14 @@ export const setSchedule = mutation({
   args: { pageId: v.id("pages"), publishAt: optionalTime, expiresAt: optionalTime, confirmFacts: v.optional(v.boolean()) },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const { page } = await requirePageAccess(ctx, args.pageId, "page.publish");
+    const { page, org, role } = await requirePageAccess(ctx, args.pageId, "page.publish");
     const now = Date.now();
     const publishAt = args.publishAt === undefined ? (page.publishAt ?? null) : args.publishAt;
     const expiresAt = args.expiresAt === undefined ? (page.expiresAt ?? null) : args.expiresAt;
+    // Scheduling a publish is publishing later, so the approval rule applies to it too (D8).
+    if (publishAt !== null && publishAt !== (page.publishAt ?? null) && !canPublishNow(role, { requireApproval: org.requireApproval ?? false })) {
+      fail("approval", "This organization requires approval. Send the page for review; the owner schedules it.");
+    }
     const problems = validateSchedule({ status: page.status, publishAt, expiresAt }, now);
     if (problems.length > 0) fail("schedule", problems.map((p) => `${p.message} ${p.fix}`).join(" "));
 

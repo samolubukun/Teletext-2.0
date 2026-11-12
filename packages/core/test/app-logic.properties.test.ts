@@ -4,7 +4,7 @@ import { entry, EMPTY_ENTRY, stepSubpage, type EntryKey, type EntryState } from 
 import { ACTIONS, PERMISSIONS, ROLES, can } from "../src/permissions";
 import { PLAN_LIMITS, canPublishMore, type Plan } from "../src/plans";
 import { allocateRange, rangesOverlap, ALLOCATION_START } from "../src/ranges";
-import { PAGE_STATUSES, canTransition, type PageStatus } from "../src/workflow";
+import { PAGE_STATUSES, canPublishNow, canTransition, type PageStatus } from "../src/workflow";
 import { RUNS } from "./arbitraries";
 
 const key: fc.Arbitrary<EntryKey> = fc.oneof(
@@ -114,5 +114,27 @@ describe("dashboard logic (publisher-dashboard D1, D2, D4, D7)", () => {
       for (const action of ACTIONS) expect(can(role, action)).toBe(expected[role]?.includes(action));
       expect([...PERMISSIONS[role]].sort()).toEqual([...(expected[role] ?? [])].sort());
     }
+  });
+});
+
+describe("approval rule (publisher-dashboard D8)", () => {
+  it("D8: viewers never publish; owners always can; editors can only when approval is off", () => {
+    fc.assert(
+      fc.property(fc.constantFrom(...ROLES), fc.boolean(), (role, requireApproval) => {
+        const allowed = canPublishNow(role, { requireApproval });
+        if (role === "viewer") expect(allowed).toBe(false);
+        if (role === "owner") expect(allowed).toBe(true);
+        if (role === "editor") expect(allowed).toBe(!requireApproval);
+        // It never grants more than the permission table does.
+        if (allowed) expect(can(role, "page.publish")).toBe(true);
+      }),
+      { numRuns: RUNS },
+    );
+  });
+
+  it("D8 example: with no options an editor can publish", () => {
+    expect(canPublishNow("editor")).toBe(true);
+    expect(canPublishNow("editor", { requireApproval: true })).toBe(false);
+    expect(canPublishNow("owner", { requireApproval: true })).toBe(true);
   });
 });

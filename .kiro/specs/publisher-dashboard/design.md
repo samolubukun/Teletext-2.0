@@ -30,6 +30,7 @@ Convex providers, so the public reader stays small. The browser gets a Convex to
 | D5 | Restoring version N then reading the page gives exactly the content of version N | tested (convex-test): restore copies version N into a new version; permissions and cross-page lookups checked |
 | D6 | An expired page is never returned by the public API | tested: core S1-S4 (10,000 runs) and convex-test with fake timers; the /api/pages route also checks expiresAt, so a late job cannot leave an expired page readable |
 | D7 | For every role and action pair, the permission function matches the permission table | tested |
+| D8 | With approval required, an editor can never publish (directly or by scheduling) but the owner always can; a viewer never can; with approval off, editors can | written first; implemented as `canPublishNow` in core, tested as a property and in convex-test |
 
 ## Security notes
 

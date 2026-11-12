@@ -61,6 +61,7 @@ export const get = query({
     canWrite: v.boolean(),
     canPublish: v.boolean(),
     canBill: v.boolean(),
+    requireApproval: v.boolean(),
   }),
   handler: async (ctx, { orgId }) => {
     const { org, role } = await requireOrgAccess(ctx, orgId, "org.read");
@@ -80,6 +81,7 @@ export const get = query({
       canWrite: can(role, "page.write"),
       canPublish: can(role, "page.publish"),
       canBill: can(role, "org.billing"),
+      requireApproval: org.requireApproval ?? false,
     };
   },
 });
@@ -139,6 +141,17 @@ export const changePlan = mutation({
       }
       await ctx.db.patch(orgId, { plan: next });
     }
+    return null;
+  },
+});
+
+/** Owner-only. With approval on, editors can send pages for review but only the owner can publish (D8). */
+export const setRequireApproval = mutation({
+  args: { orgId: v.id("organizations"), requireApproval: v.boolean() },
+  returns: v.null(),
+  handler: async (ctx, { orgId, requireApproval }) => {
+    await requireOrgAccess(ctx, orgId, "org.update");
+    await ctx.db.patch(orgId, { requireApproval });
     return null;
   },
 });
