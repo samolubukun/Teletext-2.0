@@ -69,6 +69,8 @@ export default function EditorPage() {
   // Load the saved version once.
   useEffect(() => {
     if (data && blocks === null) {
+      // One-time copy of the saved version into editable state; the guard stops any loop.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBlocks(data.blocks as Block[]);
       setFastext(data.fastext);
     }

@@ -86,6 +86,8 @@ export function Reader({ initialNumber = 100, initialSub = 1 }: { initialNumber?
   }, []);
 
   useEffect(() => {
+    // Settings live in localStorage, so they can only be read after mount (reading earlier breaks hydration).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(loadSettings());
     setShowKeypad(window.matchMedia("(pointer: coarse)").matches);
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
@@ -422,6 +424,8 @@ export function Reader({ initialNumber = 100, initialSub = 1 }: { initialNumber?
           Keys: type 3 digits for a page. Left/Right change screen. Up/Down next/previous page. R G Y B for the coloured buttons. Backspace goes back. I for the index.
         </p>
         <p className="mt-2">
+          {/* Plain link on purpose: a full navigation keeps the dashboard code out of the reader bundle. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a className="text-cyan-300 underline" href="/dashboard">
             Publisher sign in
           </a>
