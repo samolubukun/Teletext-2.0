@@ -123,3 +123,15 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
   exits 0. Added a Playwright check that `/dashboard` loads signed out with no page error or "Application error" text
   (26 tests green now). Left as known build-log noise rather than patching the SDK.
 - Deployment will use the existing Convex dev deployment (decision: simplest for a hackathon demo). `docs/deploy.md` rewritten for that.
+
+## Thu 12 Nov 2026 - live site checks
+
+- Live: https://teletext-2-0.vercel.app. `E2E_BASE_URL=<url> npx playwright test` now runs the same specs against a deployed site.
+- **Demo path passes live** (`tests/e2e/demo-path.live.spec.ts`, 1.1 min): sign in as the judge account through Hexclave's hosted page, see
+  Greenfield High (pages 400-449), paste a fake notice, condense with the real Gemini call, publish, read it as an anonymous visitor, archive it.
+  The test reuses one page titled "E2E demo path" so it never fills the range.
+- Reader and axe specs pass live on desktop and Pixel 7 (26 tests after fixing one assertion).
+- **Test bug, not an app bug:** the 5 KB test expected `s-maxage` in `Cache-Control`. Vercel's edge consumes it and shows clients
+  `public, max-age=0`, reporting caching in `x-vercel-cache`. The test now checks that header when run live.
+- **Setup gotchas worth remembering:** Hexclave's hosted sign-in page never fires `load`, so tests must wait for the form
+  (`waitUntil: "commit"`). The trusted-domain field wants the host only, with no trailing space.

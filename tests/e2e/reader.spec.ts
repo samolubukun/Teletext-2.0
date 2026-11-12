@@ -54,7 +54,11 @@ test.describe("reader", () => {
     const res = await request.get("/api/pages/412");
     expect(res.status()).toBe(200);
     expect((await res.body()).length).toBeLessThan(5120);
-    expect(res.headers()["cache-control"]).toContain("s-maxage");
+    const cacheControl = res.headers()["cache-control"] ?? "";
+    expect(cacheControl).toContain("public");
+    // Vercel's edge consumes s-maxage and shows clients "public, max-age=0"; it reports caching in x-vercel-cache instead.
+    if (process.env.E2E_BASE_URL) expect(res.headers()["x-vercel-cache"]).toBeDefined();
+    else expect(cacheControl).toContain("s-maxage");
   });
 
   test("invalid page numbers are rejected by the API", async ({ request }) => {
