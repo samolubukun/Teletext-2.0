@@ -3,7 +3,7 @@
 - [x] 1. Permission table and status machine as pure modules (D2, D7)
 - [x] 2. Range allocator (D1); no database lock needed on Convex
 - [x] 3. Hexclave sign-in, organization creation, role checks in `convex/lib/access.ts`
-- [ ] 3a. `convex-test` suite: two orgs, owner / editor / viewer / outsider (D3, security)
+- [x] 3a. `convex-test` suite (apps/web/tests/convex/permissions.test.ts, 9 tests): two orgs, owner / editor / viewer / outsider (D3, security)
 - [x] 4. Page list and editor shell with live preview
 - [x] 5. Templates (Notice, Results table, Alert, Timetable, FAQ, Events)
 - [x] 6. Validation panel using renderer warnings
