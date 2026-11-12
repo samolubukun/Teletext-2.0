@@ -11,7 +11,7 @@
 - [x] 8. Version history UI and restore (D5): `pages.versions`, `pages.restore`, editor card; 4 convex-test cases
 - [x] 9. Scheduled publish and expiry with `ctx.scheduler.runAt` (D6): pure rules in core/schedule.ts (S1-S4), pages.setSchedule + applySchedule, public route refuses expired pages, Schedule card; 12 convex-test cases
 - [x] 10. Fastext editor
-- [ ] 10a. QR code and printable poster
+- [x] 10a. QR code and printable poster (`/dashboard/[orgId]/pages/[pageId]/poster`; QR decoded back in tests, survives 12% damage at five positions)
 - [ ] 10b. Mosaic logo tool
 - [ ] 11. Analytics page (Pro)
 - [ ] 12. Report-a-page and moderation queue

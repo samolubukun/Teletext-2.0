@@ -4,6 +4,6 @@ export default defineConfig({
   test: {
     environment: "edge-runtime",
     server: { deps: { inline: ["convex-test"] } },
-    include: ["tests/convex/**/*.test.ts"],
+    include: ["tests/convex/**/*.test.ts", "tests/unit/**/*.test.ts"],
   },
 });

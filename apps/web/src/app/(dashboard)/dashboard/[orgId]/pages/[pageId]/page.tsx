@@ -168,6 +168,9 @@ export default function EditorPage() {
           <Link href={`/p/${data.number}`} target="_blank" className="font-mono text-sm text-cyan-300 underline">
             Open in reader
           </Link>
+          <Link href={`/dashboard/${orgId}/pages/${data.pageId}/poster`} className="font-mono text-sm text-cyan-300 underline">
+            QR poster
+          </Link>
           {data.canWrite && (
             <Button onClick={onSave} disabled={busy !== null || !dirty}>
               {busy === "save" ? "Saving..." : "Save"}
