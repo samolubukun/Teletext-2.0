@@ -24,7 +24,8 @@ test("sign in, condense, publish, read, archive", async ({ page, browser }) => {
   await page.locator('input[type="email"]').fill(EMAIL, { timeout: 45_000 });
   await page.locator('input[type="password"]').fill(PASSWORD);
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
-  await page.waitForURL(/teletext-2-0\.vercel\.app\/dashboard/, { timeout: 45_000 });
+  // The redirect chain can abort an in-flight navigation, so do not wait for "load" here.
+  await page.waitForURL(/teletext-2-0\.vercel\.app\/dashboard/, { timeout: 45_000, waitUntil: "commit" });
 
   // 2. The judge account owns Greenfield High.
   await expect(page.getByRole("link", { name: "Greenfield High" })).toBeVisible({ timeout: 30_000 });
