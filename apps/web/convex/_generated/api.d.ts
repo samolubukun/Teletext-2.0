@@ -15,6 +15,7 @@ import type * as orgs from "../orgs.js";
 import type * as pages from "../pages.js";
 import type * as public_ from "../public.js";
 import type * as seed from "../seed.js";
+import type * as team from "../team.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   pages: typeof pages;
   public: typeof public_;
   seed: typeof seed;
+  team: typeof team;
 }>;
 
 /**
