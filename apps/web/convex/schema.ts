@@ -123,6 +123,21 @@ export default defineSchema({
     .index("by_page_day", ["pageNumber", "day"])
     .index("by_org_day", ["orgId", "day"]),
 
+  /** A page whose content comes from a public Google Sheet (CSV) or a feed. One source per page. */
+  dataSources: defineTable({
+    orgId: v.id("organizations"),
+    pageId: v.id("pages"),
+    kind: v.union(v.literal("rss"), v.literal("sheet")),
+    /** The URL that is fetched: already checked, and for sheets already rewritten to the CSV export link. */
+    url: v.string(),
+    lastAttemptAt: v.optional(v.number()),
+    lastSyncedAt: v.optional(v.number()),
+    lastStatus: v.optional(v.union(v.literal("ok"), v.literal("unchanged"), v.literal("error"))),
+    lastNote: v.optional(v.string()),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_page", ["pageId"]),
+
   /** Fixed-window counters for public writes. The key holds only salted hashes. */
   rateLimits: defineTable({ key: v.string(), windowStart: v.number(), count: v.number() }).index("by_key", ["key"]),
 

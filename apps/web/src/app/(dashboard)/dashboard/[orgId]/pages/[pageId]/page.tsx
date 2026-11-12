@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
+import { DataSourceCard } from "@/components/dashboard/DataSourceCard";
 import { FactPanel } from "@/components/dashboard/FactPanel";
 import { ScheduleCard } from "@/components/dashboard/ScheduleCard";
 import { Button, Card, Shell, StatusBadge, errorMessage, inputClass } from "@/components/dashboard/ui";
@@ -367,6 +368,8 @@ export default function EditorPage() {
               uncheckedFacts={uncheckedFacts}
             />
           )}
+
+          {data.canWrite && <DataSourceCard pageId={data.pageId} />}
 
           <Card title={`Checks (${errors.length} errors, ${warnings.length} warnings)`}>
             {preview.warnings.length === 0 ? (

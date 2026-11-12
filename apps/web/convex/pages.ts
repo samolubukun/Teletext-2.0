@@ -113,7 +113,7 @@ export const freeNumbers = query({
   },
 });
 
-async function writeVersion(
+export async function writeVersion(
   ctx: MutationCtx,
   page: Doc<"pages">,
   org: Doc<"organizations">,

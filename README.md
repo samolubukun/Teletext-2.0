@@ -41,6 +41,13 @@ Built for **Kiroween 2026** (category: Resurrection) by one developer, with Kiro
 - **Team:** the owner invites editors or viewers with one-time codes (7 days, single use, only a hash is stored),
   changes roles and removes members. Owners can never be removed.
 - **QR poster:** a printable A4 poster per page with a QR code, the address and a big page number.
+- **Embed:** paste an iframe snippet to show a page on your own website (`/embed/412`).
+- **Live data:** link a page to a public Google Sheet or an RSS/Atom feed (Pro plan). The page content refreshes about every
+  15 minutes; the status is never changed by a sync.
+- **Reader reports and moderation:** readers can report a page without signing in; the page's team dismisses the report or takes the page offline.
+- **Analytics:** views per day, device split and top pages (Pro plan). No IP address or user agent is stored.
+- **Activity log:** the owner sees who published, restored, scheduled, invited or changed the plan.
+- **Demo checkout:** change plan with a fake card form; no payment is taken and nothing is sent.
 
 ## Stack
 

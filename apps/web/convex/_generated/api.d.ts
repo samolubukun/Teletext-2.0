@@ -10,6 +10,8 @@
 
 import type * as aiUsage from "../aiUsage.js";
 import type * as audit from "../audit.js";
+import type * as crons from "../crons.js";
+import type * as dataSources from "../dataSources.js";
 import type * as lib_access from "../lib/access.js";
 import type * as lib_audit from "../lib/audit.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
@@ -31,6 +33,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   aiUsage: typeof aiUsage;
   audit: typeof audit;
+  crons: typeof crons;
+  dataSources: typeof dataSources;
   "lib/access": typeof lib_access;
   "lib/audit": typeof lib_audit;
   "lib/rateLimit": typeof lib_rateLimit;

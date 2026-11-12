@@ -214,3 +214,14 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
 - Test hygiene: the redirect to Hexclave's hosted sign-in can take over 30 s on a freshly deployed site, so the timeout is 90 s; revoking invites tolerates buttons that
   vanish as the list updates live.
 - Postman: the Postman power was mentioned as available but is not installed in this Kiro; an API collection for `/api/pages` and `/api/search` would fit if it is added.
+
+## Thu 12 Nov 2026 - lint debt cleared, then traffic, moderation and live data sources
+
+- **Typecheck and lint were red at HEAD.** The approval rule (D8) used `canPublishNow` in `pages.ts` without importing it, and three old lint errors (two `set-state-in-effect`, one plain `<a>`) were still open. `npm run typecheck` caught the first, ESLint the rest. Each remaining directive has a comment saying why it is safe.
+- Specs first, again: `traffic-and-moderation` (T1-T10) and `data-connectors` (C1-C9) have their properties in `design.md` before any code.
+- Built: report-a-page with a moderation queue, view counters and an analytics card (Pro and up), an audit log, an embeddable widget, a demo checkout page, and live data sources (public Google Sheet CSV or RSS/Atom) refreshed by a 15-minute cron.
+- **Bug 1 (T3, found by a property I wrote for something else):** counters near `1.7e308` summed to `Infinity`, so a corrupt row made the dashboard total `NaN`-like and non-integer. Counters are now capped at 1e12 each. Real counters never get near it; the point is that one bad row cannot poison the summary.
+- **Bug 2 (convex-test, C8):** every sync wrote a new page version even when the sheet had not changed. Convex does not keep the key order of stored objects, so comparing `JSON.stringify` of the stored blocks with the new blocks always differed. That would have added a version every 15 minutes per source. Fixed with a key-sorted comparison. A unit test with a hand-written equal pair would have used the same key order and passed.
+- **Test lesson:** a `Response` body can be read once, so a mock that returns the same object for every call made the second sync fail with an error. The stub now builds a fresh `Response` per call.
+- Design notes: a public Convex mutation cannot see the caller's IP, so `/api/view` and `/api/report` hash it (salted, `RATE_LIMIT_SALT`) and pass the hash as the rate-limit key; a global per-page-per-hour cap bounds the damage from someone who varies the hash. The salt is missing in production = writes refused (fail closed).
+- Not done yet: set `RATE_LIMIT_SALT` on Vercel, deploy the new Convex schema, and try a real sheet and a real feed. Stage 2 (Stacks) is not started.

@@ -22,7 +22,7 @@ export function dayKey(ms: number): number {
   return d.getUTCFullYear() * 10_000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
 }
 
-/** The day key `days` days before `nowMs` (the first day of a window that ends today). */
+/** The day key `days` days before `nowMs` (the first day of a range that ends today). */
 export function dayKeyDaysAgo(nowMs: number, days: number): number {
   return dayKey(nowMs - Math.max(0, Math.floor(days)) * DAY_MS);
 }
@@ -93,7 +93,7 @@ export function cleanReportNote(note: string): string {
 
 export type RateState = { windowStart: number; count: number };
 
-/** Registers one hit. A new window starts when the old one is `windowMs` old. Fixed window, so it needs one row per key. */
+/** Registers one hit. A new period starts when the old one is `windowMs` old. Fixed periods, so it needs one row per key. */
 export function registerHit(prev: RateState | null, nowMs: number, windowMs: number): RateState {
   if (prev === null || !(nowMs - prev.windowStart < windowMs) || nowMs < prev.windowStart) return { windowStart: nowMs, count: 1 };
   return { windowStart: prev.windowStart, count: prev.count + 1 };

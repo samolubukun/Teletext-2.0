@@ -12,7 +12,8 @@
   return the same message. Store only hashes of IDs and IPs.
 - Rate limit AI requests per organization and public writes (views, reports) per IP.
 - Secrets only in environment variables: Next.js secrets in `.env.local` / Vercel, Convex
-  secrets (GEMINI_API_KEY, RATE_LIMIT_SALT) in the Convex dashboard. `.env.example` lists names only.
+  secrets (GEMINI_API_KEY) in the Convex dashboard. `RATE_LIMIT_SALT` lives in the Next.js environment because the route
+  handlers hash visitor IPs before calling Convex. `.env.example` lists names only.
 - Never prefix a secret with NEXT_PUBLIC_.
 - Uploaded CSVs: size limit, row limit, column limit, strict parsing.
 - Demo data is fake. No real names, IDs or phone numbers.

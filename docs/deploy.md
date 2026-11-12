@@ -27,6 +27,7 @@ Also confirm the Convex dashboard (dev deployment) has the environment variable 
    | `NEXT_PUBLIC_HEXCLAVE_PROJECT_ID` | Hexclave project id |
    | `GEMINI_API_KEY` | mark Sensitive. Never prefix with `NEXT_PUBLIC_`. |
    | `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` | same as `.env.local` |
+   | `RATE_LIMIT_SALT` | mark Sensitive. Any long random string. Without it, reader views and reports are refused in production. |
    Do not copy `CONVEX_DEPLOYMENT` (only the CLI needs it).
 6. Deploy and note the URL.
 
