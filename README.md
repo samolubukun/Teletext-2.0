@@ -11,10 +11,10 @@ Built for **Kiroween 2026** (category: Resurrection) by one developer, with Kiro
 
 | | |
 |---|---|
-| Live app | _TODO: Vercel URL_ |
+| Live app | https://teletext-2-0.vercel.app |
 | Demo video | _TODO: YouTube URL_ |
 | Try the reader | open the app and type `4` `1` `2` |
-| Publisher demo login | _TODO: email / password (shared with judges in the Devpost form)_ |
+| Publisher demo login | Sign in at `/dashboard` with email and password (not Google). Email `judge@example.com`, password `judge@example.com`. It owns the fake school "Greenfield High" (pages 400-449). Demo account only, all data is fake. |
 
 ## What it does
 
