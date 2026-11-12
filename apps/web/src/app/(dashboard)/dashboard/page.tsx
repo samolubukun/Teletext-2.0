@@ -60,6 +60,13 @@ export default function DashboardHome() {
           )}
         </Card>
 
+        <Card title="Join a team">
+          <p className="mb-3 text-sm text-neutral-400">Got an invite code from an organization owner?</p>
+          <Link href="/dashboard/join" className="font-mono text-sm text-cyan-300 underline">
+            Enter invite code
+          </Link>
+        </Card>
+
         <Card title="Create an organization">
           <form onSubmit={onCreate} className="flex flex-col gap-3">
             <label className="text-sm">

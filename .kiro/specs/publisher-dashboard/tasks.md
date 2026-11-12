@@ -16,3 +16,5 @@
 - [ ] 11. Analytics page (Pro)
 - [ ] 12. Report-a-page and moderation queue
 - [ ] 13. Playwright demo path: sign in, paste, condense, publish, read
+
+- [x] 3b. Team: one-time invite codes (hashed, 7 days), join page, owner-only role change and removal (apps/web/convex/team.ts, 11 convex-test cases)

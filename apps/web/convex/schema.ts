@@ -36,9 +36,23 @@ export default defineSchema({
     /** Hexclave user id (identity.subject). */
     userId: v.string(),
     role,
+    /** Name or email from the sign-in token when the member joined, so the owner can recognise them. */
+    label: v.optional(v.string()),
   })
     .index("by_org_user", ["orgId", "userId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_org", ["orgId"]),
+
+  /** One-time team invites. Only a SHA-256 hash of the code is stored, never the code. */
+  invites: defineTable({
+    orgId: v.id("organizations"),
+    role: v.union(v.literal("editor"), v.literal("viewer")),
+    codeHash: v.string(),
+    createdBy: v.string(),
+    expiresAt: v.number(),
+  })
+    .index("by_codeHash", ["codeHash"])
+    .index("by_org", ["orgId"]),
 
   pages: defineTable({
     orgId: v.id("organizations"),

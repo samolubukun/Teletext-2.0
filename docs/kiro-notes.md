@@ -157,3 +157,14 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
 - Remaining cost: Speed Index 4.6-6.5 s. The reader paints nothing until JavaScript runs and `/api/pages/100` returns (HTML -> JS -> fetch -> render),
   and one 840 ms hydration task remains. Likely fix: server-render the first page into the HTML. **Decision (12 Nov): leave it.** Revisit only if time is left after the Kiro items.
 - Lesson: one good local run is not a result. Run the live check several times before writing a number down.
+
+## Thu 12 Nov 2026 - team invites and version history
+
+- Added version history with restore (D5) and a Team feature: the owner creates a one-time invite code (editor or viewer, 7 days),
+  the invited person enters it at `/dashboard/join`. 11 convex-test cases cover single use, hashed storage, one shared error for
+  unknown / expired / revoked codes, owner-only management, cross-organization isolation, and "an owner can never be demoted or removed".
+- Design choices: Convex only knows Hexclave user ids, not emails, so codes beat "invite by email". Only a SHA-256 hash is stored.
+  Roles never include owner via invites. Expiry is compared in the mutation (`Date.now()` is fine there) and shown by the client, not filtered in a query.
+- Known gap: no rate limit on `acceptInvite` guesses. A 12-character code from a 31-letter alphabet is about 59 bits, so guessing is not practical,
+  but the security steering doc asks for rate limits on lookups; add one if time allows.
+- Known lint debt (older code, not from today): `react-hooks/set-state-in-effect` in `Reader.tsx` and the editor page, and a plain `<a href="/dashboard">` in `Reader.tsx`. CI does not lint the web app yet.

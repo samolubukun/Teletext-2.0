@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { TeamCard } from "@/components/dashboard/TeamCard";
 import { Button, Card, Shell, StatusBadge, errorMessage, inputClass } from "@/components/dashboard/ui";
 
 export default function OrgPage() {
@@ -131,6 +132,8 @@ export default function OrgPage() {
               </form>
             </Card>
           )}
+
+          {org.role === "owner" && <TeamCard orgId={id} />}
 
           <Card title="Plan">
             <ul className="mb-3 space-y-1 font-mono text-xs text-neutral-300">
