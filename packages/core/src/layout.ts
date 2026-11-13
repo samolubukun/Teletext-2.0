@@ -205,7 +205,7 @@ function layoutTable(ctx: Ctx, block: Extract<Block, { type: "table" }>): Line[]
 
 function layoutMosaic(ctx: Ctx, block: Extract<Block, { type: "mosaic" }>): Line[] {
   const rows = (Array.isArray(block.rows) ? block.rows : []).filter((r): r is string => typeof r === "string");
-  if (rows.length > MAX_MOSAIC_ROWS || rows.some((r) => r.length > TEXT_WIDTH || /[^\x20-\x7e]/.test(r))) {
+  if (rows.length > MAX_MOSAIC_ROWS || rows.some((r) => r.length > TEXT_WIDTH || /[^\x20-\x7f]/.test(r))) {
     ctx.warnings.push({
       level: "warning",
       code: "mosaic-trimmed",
@@ -215,7 +215,7 @@ function layoutMosaic(ctx: Ctx, block: Extract<Block, { type: "mosaic" }>): Line
   }
   return rows.slice(0, MAX_MOSAIC_ROWS).map((r) => ({
     kind: "mosaic" as const,
-    tokens: [ctl("mosaic", ctx.style.mosaic), ...chars(r.replace(/[^\x20-\x7e]/g, " ").slice(0, TEXT_WIDTH))],
+    tokens: [ctl("mosaic", ctx.style.mosaic), ...chars(r.replace(/[^\x20-\x7f]/g, " ").slice(0, TEXT_WIDTH))],
   }));
 }
 

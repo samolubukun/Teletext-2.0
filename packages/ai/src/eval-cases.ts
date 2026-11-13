@@ -17,7 +17,8 @@ Mrs Adaeze Okafor, Principal`,
     id: "clinic-vaccine",
     source: `Lakeside Clinic will hold a free measles vaccine day on Sat 21 Nov. Doors open at 08:30 and close at 13:00. Children aged 9 months to 5 years are welcome. Bring the child's health card. Questions: 0800 000 0111.`,
     mustKeep: ["21 Nov", "08:30", "13:00", "0800 000 0111"],
-    phrases: ["9 months to 5 years", "health card"],
+    // A range stays a range: "9 months to 5 years" or "between 9 months and 5 years". "9 months and 5 years" alone would read as two ages.
+    phrases: ["(9 months (to|-) ?5 years|between 9 months and 5 years)", "health card"],
   },
   {
     id: "bus-delay",
@@ -106,7 +107,7 @@ Candidates must arrive 30 minutes early.`,
     id: "two-contacts",
     source: `For fees call Mr Chidi Obi on 0800 000 0444. For transport call Mrs Funke Ade on 0800 000 0555. Offices are open Mon to Fri, 8am to 4pm.`,
     mustKeep: ["Chidi Obi", "0800 000 0444", "Funke Ade", "0800 000 0555", "8am", "4pm"],
-    phrases: ["Mon (to|-) ?Fri"],
+    phrases: ["Mon(day)? (to|-) ?Fri(day)?"],
   },
   {
     id: "exception",

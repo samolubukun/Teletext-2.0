@@ -30,3 +30,4 @@ export * from "./schema";
 export * from "./schedule";
 export * from "./traffic";
 export * from "./sources";
+export * from "./mosaic";

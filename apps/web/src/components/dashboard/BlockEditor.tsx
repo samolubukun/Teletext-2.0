@@ -1,5 +1,6 @@
 "use client";
 import type { Block } from "@teletext/core";
+import { MosaicImporter } from "./MosaicImporter";
 import { inputClass } from "./ui";
 
 const NEW_BLOCK: Record<Block["type"], () => Block> = {
@@ -85,7 +86,12 @@ function BlockFields({ block, onChange }: { block: Block; onChange: (b: Block) =
         </div>
       );
     case "mosaic":
-      return <textarea className={`${inputClass} font-mono`} rows={4} value={block.rows.join("\n")} onChange={(e) => onChange({ ...block, rows: toLines(e.target.value) })} aria-label="Mosaic rows" />;
+      return (
+        <div>
+          <MosaicImporter onApply={(rows) => onChange({ ...block, rows })} />
+          <textarea className={`${inputClass} font-mono`} rows={4} value={block.rows.join("\n")} onChange={(e) => onChange({ ...block, rows: toLines(e.target.value) })} aria-label="Mosaic rows" />
+        </div>
+      );
     case "divider":
       return <p className="text-xs text-neutral-500">A blue line across the page.</p>;
   }

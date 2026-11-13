@@ -5,6 +5,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { describe, expect, it } from "vitest";
 import { condense, type ModelCall } from "../src/condense";
+import { blocksToText } from "../src/schema";
 import { scoreCase, summarize } from "../src/eval";
 import { EVAL_CASES } from "../src/eval-cases";
 import { withModelFallback } from "../src/fallback-models";
@@ -33,10 +34,13 @@ describe.skipIf(!live)("condenser evaluation (live)", () => {
     const call = withModelFallback(models, callFor);
     const scores = [];
     for (const c of EVAL_CASES) {
-      const score = scoreCase(c, await condense(c.source, call));
+      const result = await condense(c.source, call);
+      const score = scoreCase(c, result);
       scores.push(score);
       if (score.missingValues.length || score.missingPhrases.length || score.invented.length || score.usedFallback) {
         console.log(`${c.id}:`, JSON.stringify({ missing: score.missingValues, phrases: score.missingPhrases, invented: score.invented, fallback: score.usedFallback }));
+        // Read the actual draft before changing the prompt or the regex (a miss may be a fair rewording).
+        if (score.missingPhrases.length) console.log(`  draft of ${c.id}: ${JSON.stringify(blocksToText(result.blocks))}`);
       }
     }
     const summary = summarize(scores, EVAL_CASES);

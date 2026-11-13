@@ -225,3 +225,34 @@ Evaluation harness (20 documents) is still to do; record the score here when it 
 - **Test lesson:** a `Response` body can be read once, so a mock that returns the same object for every call made the second sync fail with an error. The stub now builds a fresh `Response` per call.
 - Design notes: a public Convex mutation cannot see the caller's IP, so `/api/view` and `/api/report` hash it (salted, `RATE_LIMIT_SALT`) and pass the hash as the rate-limit key; a global per-page-per-hour cap bounds the damage from someone who varies the hash. The salt is missing in production = writes refused (fail closed).
 - Not done yet: set `RATE_LIMIT_SALT` on Vercel, deploy the new Convex schema, and try a real sheet and a real feed. Stage 2 (Stacks) is not started.
+
+## Fri 13 Nov 2026 - open bugs fixed, and the mosaic logo tool
+
+**Open bugs from the list, one by one**
+1. **Editor could overwrite a data-source sync.** The editor loaded the page once, so a later Save replaced content that a sync (or another editor) had written. Now the editor watches the server version: it reloads silently when there is nothing unsaved, shows a "Load the new version / Keep mine" banner when there is, and `pages.save` takes a `baseVersion` and refuses a stale save with a `conflict` error (convex-test C10). Older callers that send no base version still work.
+2. **Invite-code guessing had no rate limit.** A first attempt would not have worked: a Convex mutation that throws rolls back its own writes, including the counter. So a wrong code is now a normal result (`{ ok: false }`), which keeps the counter; 8 wrong codes in 10 minutes lock that person out, even for a correct code, and other people are not affected. The lock-out ends after 10 minutes (fake-timer test).
+3. **Flaky 50 ms render test.** It failed once while other node processes were using the CPU, and passed 3 of 3 alone. The limit stays 50 ms, but the test now takes the fastest of 7 runs: one slow run on a busy machine says nothing about the code, and slow code is slow every time.
+4. **The `exception` phrase check.** Read the drafts first, as planned. With condense-v3, 2 of 6 drafts of the uniform notice said "must wear uniform from Mon 2 Nov" and then "may wear sports kit on Fri 6 Nov": the exception had become a separate permission, which is a real loss of meaning (no "except"). Fix is the prompt (condense-v4: an exception stays an exception). After the change 7 of 7 drafts kept "except on Fri 6 Nov". Two other phrase misses were the checker's fault, not the model's: "Mon to Fri" did not match "Monday to Friday", and "9 months to 5 years" did not match "between 9 months and 5 years" (a correct range). Both regexes now accept those forms.
+5. **Slow first paint: tried, measured, reverted.** I rendered the first page into the server HTML (`/` and `/p/412` fetched it on the server) so nothing would wait for JavaScript and a second request. I measured it against the old behaviour on the same machine and the same build, switching the server rendering off with a temporary environment variable, with Lighthouse 12 (mobile profile, 4 runs each, `/p/412`):
+
+   | | Performance | First contentful paint | Largest contentful paint | Total blocking time | Speed index |
+   | --- | --- | --- | --- | --- | --- |
+   | Page in the HTML | 70, 75, 78, 79 | 0.8 to 1.7 s | 2.7 to 2.9 s | 590 to 1,130 ms | 1.5 to 1.7 s |
+   | Fetched by the browser (old) | 77, 77, 78, 79 | about 0.8 s | 2.5 to 2.7 s | 690 to 830 ms | about 1.0 to 1.1 s (one run 3.7 s) |
+
+   The server-rendered version was not faster. The HTML now waits for a Convex round trip on every request, while the JSON route is edge-cached, and hydrating the 960-cell screen still costs the same main-thread time. The change also made the keys do nothing for a moment while the page was already visible (three phone tests typed too early and lost keys). I reverted all of it. What is left of the slow score is hydration of the 960 cell spans, so the next real fix would be fewer DOM nodes per row (one text run per row instead of one span per cell), not moving the fetch. Not done: it touches the renderer and the CSS, and the reader already scores 100 for accessibility, best practices and SEO.
+
+**Evaluation scores (gemini-3.5-flash-lite, live, same 20 cases)**
+
+| Prompt | Values kept | Invented | Phrase checks | Fallbacks |
+| --- | --- | --- | --- | --- |
+| condense-v3 | 100% (one run) | 0 | 95.2% | 0 of 20 |
+| condense-v4, run 1 | 96.4% ("3 of 4", "8.30 a.m.", "9 a.m." missing) | 0 | 95.2% (checker too narrow) | 0 of 20 |
+| condense-v4, run 2 | 98.8% ("top 3" missing) | 0 | 100% | 0 of 20 |
+| condense-v4, run 3 | 100% | 0 | 95.2% (checker too narrow) | 0 of 20 |
+
+The model is not deterministic: the must-keep misses move from run to run and never repeat in the same case, so I did not read them as a v4 regression. I have not proved that. A fair comparison needs 5 or more runs of each prompt; that is still open.
+
+**Mosaic logo tool (Stage 1)**
+- Spec first (`mosaic-logo-tool`, M1-M7). Pure converter in `packages/core/src/mosaic.ts` (original MIT code, no `image-to-sextants`): brightness grid in, mosaic rows out, with automatic (Otsu) or manual cut-off, invert, and Floyd-Steinberg dithering. The browser decodes the picture on a canvas and sends only luminance; nothing is uploaded.
+- **Bug found by M6:** the layout accepted mosaic characters only up to 0x7e, so the "all six dots lit" character (0x7f) was blanked and reported as "mosaic trimmed". Every solid area of a logo would have vanished. Fixed in `layout.ts`, with a regression test. Also: the first cell of a mosaic row holds the colour code, so the usable width is 39 cells, not 40; the spec and constant say 39.

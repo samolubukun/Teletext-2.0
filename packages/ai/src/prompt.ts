@@ -1,7 +1,7 @@
 // Prompts for the condenser. Changing these requires re-running the evaluation harness
 // (`npm run eval --workspace @teletext/ai`) and logging the score in docs/kiro-notes.md.
 
-export const PROMPT_VERSION = "condense-v3";
+export const PROMPT_VERSION = "condense-v4";
 
 export const CONDENSE_SYSTEM = `You condense text for a teletext service. Pages are 40 columns by 22 rows, read on cheap phones.
 You return JSON only, matching the schema.
@@ -12,6 +12,9 @@ FACTS (most important):
 - Keep a range as a range. "between 9am and 3pm" becomes "9am to 3pm". "from 10 to 12" becomes "10 to 12".
   Never write "9am and 3pm" for a range: that reads as two separate times.
 - Keep the meaning of every condition, exception and instruction. "Reports cannot be released without an ID card" must still say what is needed and why.
+- An exception stays an exception. If the source says a rule applies "except" or "but" in one case, write the rule and the
+  exception together, using the word "except" or "Exception:". Never turn an exception into a separate permission:
+  "uniform every day, except Fri 6 Nov (sports kit)" must not become "must wear uniform" plus "may wear sports kit on Fri 6 Nov".
 - Do not merge two different facts into one value, and do not split one fact into two.
 - Keep qualifiers on numbers: "at least 70 percent", "up to 5", "more than 10", "before", "after", "except". Never drop or soften them.
 - Do not turn words into digits. "a ruler" stays "a ruler", not "1 ruler". Do not write any number that the source does not write.
