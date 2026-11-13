@@ -164,6 +164,25 @@ describe("data sources", () => {
       expect((await sourceOf(pageId))?.lastNote).toMatch(/not an RSS or Atom feed/);
     });
 
+    it("C10: an editor that started before a sync cannot overwrite it; one that started after can", async () => {
+      await pro();
+      fetchStub.mockImplementation(() => Promise.resolve(respond("Route,Time\n12,08:00")));
+      await as(t, "owner_a").mutation(api.dataSources.link, { pageId, kind: "sheet", url: SHEET });
+      await settle();
+      const opened = await version(pageId);
+      fetchStub.mockImplementation(() => Promise.resolve(respond("Route,Time\n12,09:00")));
+      vi.advanceTimersByTime(2 * 60_000);
+      await as(t, "owner_a").mutation(api.dataSources.syncNow, { pageId });
+      await settle();
+      const stale = { pageId, blocks: opened.blocks, fastext: opened.fastext, baseVersion: opened.version };
+      await rejects(as(t, "owner_a").mutation(api.pages.save, stale), "conflict");
+      const fresh = await version(pageId);
+      expect(JSON.stringify(fresh.blocks)).toContain("09:00");
+      await as(t, "owner_a").mutation(api.pages.save, { ...stale, baseVersion: fresh.version });
+      // Callers that send no base version keep working (older clients).
+      await as(t, "owner_a").mutation(api.pages.save, { pageId, blocks: opened.blocks, fastext: opened.fastext });
+    });
+
     it("C9: syncing never changes the status of a draft or a published page", async () => {
       await pro();
       fetchStub.mockImplementation(() => Promise.resolve(respond("Route,Time\n12,08:00"))); // a Response body can be read only once

@@ -8,7 +8,7 @@ import { useHexclaveApp, useUser } from "@hexclave/next";
 import { useMutation, useQuery } from "convex/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../convex/_generated/dataModel";
 import { BlockEditor } from "@/components/dashboard/BlockEditor";
@@ -67,15 +67,39 @@ export default function EditorPage() {
   const [confirmFacts, setConfirmFacts] = useState(false);
   const [now, setNow] = useState(() => new Date().toISOString());
 
-  // Load the saved version once.
+  // The saved version the editor state came from. If the server version moves on without us (a data source sync,
+  // another editor, a scheduled job), a later Save would silently overwrite it, so we reload or warn instead.
+  const knownVersion = useRef<number | null>(null);
+  // Set just before this editor writes a version itself, so its own save is not mistaken for someone else's.
+  const expectOwnVersion = useRef(false);
+  const [remoteChange, setRemoteChange] = useState(false);
+
   useEffect(() => {
-    if (data && blocks === null) {
-      // One-time copy of the saved version into editable state; the guard stops any loop.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!data) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- syncing editor state with a server version change; guarded by knownVersion */
+    if (blocks === null) {
       setBlocks(data.blocks as Block[]);
       setFastext(data.fastext);
+      knownVersion.current = data.version;
+      return;
     }
-  }, [data, blocks]);
+    if (knownVersion.current === null || data.version === knownVersion.current) return;
+    if (expectOwnVersion.current) {
+      expectOwnVersion.current = false;
+      knownVersion.current = data.version;
+      return;
+    }
+    if (dirty) {
+      setRemoteChange(true);
+      return;
+    }
+    knownVersion.current = data.version;
+    setBlocks(data.blocks as Block[]);
+    setFastext(data.fastext);
+    setAiSource(null);
+    setMessage({ kind: "ok", text: `This page was updated elsewhere (now version ${data.version}). The editor shows the new version.` });
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [data, blocks, dirty]);
 
   // Keep the preview clock fresh.
   useEffect(() => {
@@ -123,6 +147,7 @@ export default function EditorPage() {
     try {
       await fn();
     } catch (err) {
+      expectOwnVersion.current = false;
       setMessage({ kind: "error", text: errorMessage(err) });
     } finally {
       setBusy(null);
@@ -131,8 +156,12 @@ export default function EditorPage() {
 
   const onSave = () =>
     run("save", async () => {
-      const r = await save({ pageId: data.pageId, blocks, fastext, uncheckedFacts });
+      expectOwnVersion.current = true;
+      const r = await save({ pageId: data.pageId, blocks, fastext, uncheckedFacts, baseVersion: knownVersion.current ?? undefined });
+      knownVersion.current = r.version;
+      expectOwnVersion.current = false;
       setDirty(false);
+      setRemoteChange(false);
       setMessage({ kind: "ok", text: `Saved version ${r.version}.${data.status === "published" ? " Readers see it now." : ""}` });
     });
 
@@ -150,7 +179,10 @@ export default function EditorPage() {
   const onStatus = (to: PageStatus) =>
     run(to, async () => {
       if (dirty) {
-        await save({ pageId: data.pageId, blocks, fastext, uncheckedFacts });
+        expectOwnVersion.current = true;
+        const saved = await save({ pageId: data.pageId, blocks, fastext, uncheckedFacts, baseVersion: knownVersion.current ?? undefined });
+        knownVersion.current = saved.version;
+        expectOwnVersion.current = false;
         setDirty(false);
       }
       await setStatus({ pageId: data.pageId, to, confirmFacts });
@@ -181,6 +213,34 @@ export default function EditorPage() {
           )}
         </div>
       </div>
+
+      {remoteChange && (
+        <div role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded border border-yellow-600 bg-yellow-950/40 p-3 text-sm text-yellow-200">
+          <span>This page changed on the server (version {data.version}) while you have unsaved changes. Saving now would replace that update.</span>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              knownVersion.current = data.version;
+              setBlocks(data.blocks as Block[]);
+              setFastext(data.fastext);
+              setAiSource(null);
+              setDirty(false);
+              setRemoteChange(false);
+            }}
+          >
+            Load the new version (drop my changes)
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              knownVersion.current = data.version;
+              setRemoteChange(false);
+            }}
+          >
+            Keep mine
+          </Button>
+        </div>
+      )}
 
       {message && (
         <p role={message.kind === "error" ? "alert" : "status"} className={`mb-4 rounded p-2 text-sm ${message.kind === "error" ? "bg-red-950 text-red-300" : "bg-green-950 text-green-300"}`}>
@@ -297,7 +357,10 @@ export default function EditorPage() {
                           onClick={() =>
                             run("restore", async () => {
                               if (dirty && !window.confirm("You have unsaved changes. Restoring will replace them. Continue?")) return;
+                              expectOwnVersion.current = true;
                               const r = await restore({ pageId: data.pageId, version: v.version });
+                              knownVersion.current = r.version;
+                              expectOwnVersion.current = false;
                               setBlocks(r.blocks as Block[]);
                               setFastext(r.fastext);
                               setAiSource(null);

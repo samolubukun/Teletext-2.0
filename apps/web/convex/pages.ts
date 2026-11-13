@@ -168,10 +168,17 @@ export const create = mutation({
 });
 
 export const save = mutation({
-  args: { pageId: v.id("pages"), blocks: v.any(), fastext: v.array(fastextLink), uncheckedFacts: v.optional(v.number()) },
+  // baseVersion: the version the editor started from. If the page has moved on (a data source sync, another editor), the save is refused.
+  args: { pageId: v.id("pages"), blocks: v.any(), fastext: v.array(fastextLink), uncheckedFacts: v.optional(v.number()), baseVersion: v.optional(v.number()) },
   returns: v.object({ version: v.number(), errors: v.number(), warnings: v.number() }),
   handler: async (ctx, args) => {
     const { page, org, userId } = await requirePageAccess(ctx, args.pageId, "page.write");
+    if (args.baseVersion !== undefined) {
+      const current = page.currentVersionId ? await ctx.db.get(page.currentVersionId) : null;
+      if ((current?.version ?? 0) !== args.baseVersion) {
+        fail("conflict", "This page was changed after you opened it. Load the new version or copy your changes first.");
+      }
+    }
     const blocks = blocksSchema.safeParse(args.blocks);
     if (!blocks.success) fail("invalid", `The page content is not valid: ${blocks.error.issues[0]?.message ?? "unknown problem"}.`);
     const fastext = fastextLinkSchema.array().max(4).safeParse(args.fastext);

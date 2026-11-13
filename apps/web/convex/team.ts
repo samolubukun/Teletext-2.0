@@ -6,6 +6,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { fail, requireOrgAccess, requireUserId } from "./lib/access";
 import { recordAudit } from "./lib/audit";
+import { hit, isOverLimit } from "./lib/rateLimit";
 
 const assignableRole = v.union(v.literal("editor"), v.literal("viewer"));
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -99,19 +100,38 @@ export const revokeInvite = mutation({
   },
 });
 
-/** Any signed-in user can redeem a valid code. The invite is deleted, so a code works once. */
+/** Wrong guesses allowed per person: 8 in 10 minutes. */
+const MAX_WRONG_CODES = 8;
+const WRONG_CODE_PERIOD_MS = 10 * 60_000;
+
+/**
+ * Any signed-in user can redeem a valid code. The invite is deleted, so a code works once.
+ * A wrong code is an ordinary RESULT, not a thrown error: a mutation that throws rolls back its own writes,
+ * which would also roll back the guess counter. Returning keeps the counter, so guessing is rate limited.
+ */
 export const acceptInvite = mutation({
   args: { code: v.string() },
-  returns: v.object({ orgId: v.id("organizations"), orgName: v.string() }),
+  returns: v.union(
+    v.object({ ok: v.literal(true), orgId: v.id("organizations"), orgName: v.string() }),
+    v.object({ ok: v.literal(false), code: v.union(v.literal("invalid_invite"), v.literal("rate")), message: v.string() }),
+  ),
   handler: async (ctx, { code }) => {
     const userId = await requireUserId(ctx);
+    const wrongKey = `inv:${userId}`;
+    const wrong = async () => {
+      await hit(ctx, wrongKey, MAX_WRONG_CODES, WRONG_CODE_PERIOD_MS);
+      return { ok: false as const, code: "invalid_invite" as const, message: INVALID_INVITE };
+    };
+    if (await isOverLimit(ctx, wrongKey, MAX_WRONG_CODES, WRONG_CODE_PERIOD_MS)) {
+      return { ok: false as const, code: "rate" as const, message: "Too many wrong codes. Wait a few minutes and try again." };
+    }
     const normalized = normalizeCode(code);
-    if (normalized.length !== CODE_LENGTH) fail("invalid_invite", INVALID_INVITE);
+    if (normalized.length !== CODE_LENGTH) return await wrong();
     const codeHash = await hashCode(normalized);
     const invite = await ctx.db.query("invites").withIndex("by_codeHash", (q) => q.eq("codeHash", codeHash)).unique();
-    if (!invite || invite.expiresAt < Date.now()) fail("invalid_invite", INVALID_INVITE);
+    if (!invite || invite.expiresAt < Date.now()) return await wrong();
     const org = await ctx.db.get(invite.orgId);
-    if (!org) fail("invalid_invite", INVALID_INVITE);
+    if (!org) return await wrong();
 
     const already = await ctx.db
       .query("members")
@@ -126,7 +146,7 @@ export const acceptInvite = mutation({
     await ctx.db.insert("members", { orgId: invite.orgId, userId, role: invite.role, ...(label ? { label } : {}) });
     await ctx.db.delete(invite._id);
     await recordAudit(ctx, org._id, userId, "team.join", `Joined as ${invite.role}`);
-    return { orgId: org._id, orgName: org.name };
+    return { ok: true as const, orgId: org._id, orgName: org.name };
   },
 });
 

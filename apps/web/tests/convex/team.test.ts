@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 // Team management: invites, roles, removal. Fake user ids only.
 import { convexTest } from "convex-test";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import schema from "../../convex/schema";
@@ -33,12 +33,12 @@ describe("team", () => {
     const code = await invite("editor");
     expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
     const joined = await as(t, "user_new", { name: "Bola Editor" }).mutation(api.team.acceptInvite, { code });
-    expect(joined.orgId).toBe(orgA);
+    expect(joined).toMatchObject({ ok: true, orgId: orgA });
     // The new member can now write; the code is spent.
     const detail = await as(t, "user_new").query(api.orgs.get, { orgId: orgA });
     expect(detail.role).toBe("editor");
     expect(detail.canWrite).toBe(true);
-    await rejectsWith(as(t, "user_other").mutation(api.team.acceptInvite, { code }), "invalid_invite");
+    expect(await as(t, "user_other").mutation(api.team.acceptInvite, { code })).toMatchObject({ ok: false, code: "invalid_invite" });
   });
 
   it("codes are case and dash insensitive", async () => {
@@ -67,18 +67,37 @@ describe("team", () => {
     if (!toRevoke) throw new Error("expected an open invite");
     await owner(t).mutation(api.team.revokeInvite, { inviteId: toRevoke.inviteId });
 
-    const messages: string[] = [];
+    const results = [];
     for (const code of ["ZZZZ-ZZZZ-ZZZZ", "short", "", expired, revoked]) {
-      try {
-        await as(t, "user_new").mutation(api.team.acceptInvite, { code });
-        messages.push("ACCEPTED");
-      } catch (e) {
-        const text = String((e as Error).message);
-        messages.push(text.slice(text.indexOf("invalid_invite")));
-      }
+      results.push(await as(t, "user_new").mutation(api.team.acceptInvite, { code }));
     }
-    expect(messages.every((m) => m.includes("invalid_invite"))).toBe(true);
-    expect(new Set(messages).size).toBe(1);
+    expect(results.every((r) => !r.ok && r.code === "invalid_invite")).toBe(true);
+    expect(new Set(results.map((r) => (r.ok ? "" : r.message))).size).toBe(1);
+  });
+
+  it("guessing is rate limited: 8 wrong codes lock that person out for 10 minutes, even for a correct code", async () => {
+    const good = await invite("editor");
+    const guesser = as(t, "user_guesser");
+    for (let i = 0; i < 8; i++) {
+      expect(await guesser.mutation(api.team.acceptInvite, { code: `AAAA-BBBB-CC${i}D` })).toMatchObject({ code: "invalid_invite" });
+    }
+    expect(await guesser.mutation(api.team.acceptInvite, { code: good })).toMatchObject({ ok: false, code: "rate" });
+    // Another person is not affected, and the code was never spent by the locked-out attempt.
+    expect(await as(t, "user_honest").mutation(api.team.acceptInvite, { code: good })).toMatchObject({ ok: true });
+  });
+
+  it("the lock-out ends after 10 minutes", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const good = await invite("viewer");
+      const guesser = as(t, "user_guesser");
+      for (let i = 0; i < 8; i++) await guesser.mutation(api.team.acceptInvite, { code: `AAAA-BBBB-CC${i}D` });
+      expect(await guesser.mutation(api.team.acceptInvite, { code: good })).toMatchObject({ code: "rate" });
+      vi.setSystemTime(Date.now() + 11 * 60_000);
+      expect(await guesser.mutation(api.team.acceptInvite, { code: good })).toMatchObject({ ok: true });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("signed-out callers cannot accept, and existing members cannot re-join", async () => {

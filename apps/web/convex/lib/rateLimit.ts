@@ -11,3 +11,10 @@ export async function hit(ctx: MutationCtx, key: string, limit: number, windowMs
   else await ctx.db.insert("rateLimits", { key, ...next });
   return withinLimit(next, limit);
 }
+
+/** True when `key` has already used up `limit` hits in the current period. Reads only, so it can be used before work that may fail. */
+export async function isOverLimit(ctx: MutationCtx, key: string, limit: number, windowMs: number): Promise<boolean> {
+  const row = await ctx.db.query("rateLimits").withIndex("by_key", (q) => q.eq("key", key)).unique();
+  if (!row || !(Date.now() - row.windowStart < windowMs)) return false;
+  return row.count >= limit;
+}

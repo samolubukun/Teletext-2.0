@@ -21,8 +21,12 @@ function JoinForm() {
     setBusy(true);
     setError(null);
     try {
-      const { orgId } = await accept({ code });
-      router.push(`/dashboard/${orgId}`);
+      const result = await accept({ code });
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      router.push(`/dashboard/${result.orgId}`);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
