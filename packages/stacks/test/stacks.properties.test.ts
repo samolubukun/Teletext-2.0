@@ -77,3 +77,53 @@ describe("Stack format and CardScript ST1-ST10", () => {
     expect(result.steps).toBeLessThanOrEqual(200);
   });
 });
+
+
+describe("CardScript control flow and expressions", () => {
+  it("P-CS1/P-CS2/P-CS3: evaluates branches, concatenation, arithmetic, and submit", () => {
+    const script = [
+      'set name to "Ada" & " Lovelace"',
+      "set score to 40 + 2",
+      "if score = 42",
+      'show message "ok"',
+      "else",
+      'show message "bad"',
+      "end if",
+      "submit form contact",
+    ].join("\n");
+    const stack: Stack = { ...validStack, cards: [{ ...validStack.cards[0]!, buttons: [{ key: "green", label: "Run", script }] }] };
+    const result = run(stack, state, { type: "button", key: "green" });
+    expect(result.state.variables).toMatchObject({ name: "Ada Lovelace", score: 42 });
+    expect(result.effects).toContainEqual({ type: "message", text: "ok" });
+    expect(result.effects).toContainEqual({ type: "submit", formId: "contact", fields: state.fields });
+  });
+
+  it("P-CS4: executes only bounded iterations over provided state", () => {
+    const script = ['for each item in rows limit 2', 'set total to total + 1', 'end for'].join("\n");
+    const stack: Stack = { ...validStack, cards: [{ ...validStack.cards[0]!, buttons: [{ key: "green", label: "Run", script }] }] };
+    const result = run(stack, { ...state, variables: { ...state.variables, rows: [{ x: "a" }, { x: "b" }, { x: "c" }], total: 0 } }, { type: "button", key: "green" });
+    expect(result.state.variables.total).toBe(2);
+    expect(result.steps).toBeLessThanOrEqual(200);
+  });
+
+  it("P-CS5: malformed blocks and excessive loop limits are rejected", () => {
+    expect(parseCardScript("if x = 1\nshow message \\\"x\\\"")).toMatchObject({ ok: false });
+    expect(parseCardScript("for each row in rows limit 21\\nend for")).toMatchObject({ ok: false });
+  });
+
+  it("P-CS1: arbitrary expression-bearing scripts never throw", () => {
+    fc.assert(fc.property(fc.string({ maxLength: 600 }), (value) => {
+      const source = `set x to "${value.replaceAll('"', '')}" & 1`;
+      expect(() => parseCardScript(source)).not.toThrow();
+    }), { numRuns: RUNS });
+  });
+
+  it("P-CS4/P-CS6: arbitrary bounded loop counts never exceed the step cap", () => {
+    fc.assert(fc.property(fc.integer({ min: 0, max: 20 }), (limit) => {
+      const script = `for each item in rows limit ${limit}\\nshow message "x"\\nend for`;
+      const stack: Stack = { ...validStack, cards: [{ ...validStack.cards[0]!, buttons: [{ key: "green", label: "Run", script }] }] };
+      const result = run(stack, { ...state, variables: { ...state.variables, rows: Array.from({ length: 500 }, () => ({ x: "x" })) } }, { type: "button", key: "green" });
+      expect(result.steps).toBeLessThanOrEqual(200);
+    }), { numRuns: RUNS });
+  });
+});

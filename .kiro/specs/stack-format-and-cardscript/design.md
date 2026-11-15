@@ -29,7 +29,18 @@
 
 ## AST and execution
 
-The first implementation supports the high-value subset: `go to card`, `go to page`, `set`, `show message`, `clear fields`, bounded `if`, and `lookup`. The grammar is line-oriented and deliberately rejects unknown text. Later commands can be added only with a property and acceptance tests.
+The implementation supports the safe line-oriented subset: `go to card`, `go to page`, `set`, `add`, `show message`, `clear fields`, `submit form`, `lookup`, bounded `if`/`else`/`end if`, and bounded `for each ... limit N` (N <= 20). Expressions support text, numbers, variables, row columns, comparisons, boolean `and`/`or`/`not`, numeric `+`/`-`, and text concatenation with `&`. Unknown text and malformed blocks are rejected. Loops only iterate values already present in interpreter state; they never access tables or perform I/O.
+
+Additional correctness properties:
+
+| Id | Property |
+| --- | --- |
+| P-CS1 | Expression parsing and evaluation are deterministic and never execute code or access external data. |
+| P-CS2 | Conditional branches execute only the selected branch. |
+| P-CS3 | Submit emits a copied field payload and never mutates input state. |
+| P-CS4 | Iteration executes at most the declared limit and never more than 20 items. |
+| P-CS5 | Unterminated or unexpected control-flow delimiters return diagnostics. |
+| P-CS6 | Nested execution remains bounded by 200 steps. |
 
 Lookup is an effect:
 
