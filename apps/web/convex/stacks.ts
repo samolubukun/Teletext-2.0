@@ -7,9 +7,6 @@ import type { MutationCtx } from "./_generated/server";
 import { fail, requireOrgAccess } from "./lib/access";
 import { hit, isOverLimit } from "./lib/rateLimit";
 
-const enabled = () => process.env.STACKS_ENABLED !== "false";
-function requireEnabled(): void { if (!enabled()) fail("disabled", "Stacks are not enabled."); }
-
 async function hash(value: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
@@ -30,7 +27,6 @@ export const create = mutation({
   args: { orgId: v.id("organizations"), name: v.string(), definition: v.any(), rows: v.optional(v.array(rowInput)) },
   returns: v.id("stacks"),
   handler: async (ctx, { orgId, name, definition, rows }) => {
-    requireEnabled();
     const { userId } = await requireOrgAccess(ctx, orgId, "page.write");
     const stack = checkedDefinition(definition);
     const existing = await ctx.db.query("stacks").withIndex("by_org_name", (q) => q.eq("orgId", orgId).eq("name", name)).first();
@@ -47,7 +43,6 @@ export const save = mutation({
   args: { stackId: v.id("stacks"), definition: v.any(), rows: v.optional(v.array(rowInput)) },
   returns: v.object({ version: v.number() }),
   handler: async (ctx, { stackId, definition, rows }) => {
-    requireEnabled();
     const stack = await ctx.db.get(stackId);
     if (!stack) fail("not_found", "Stack not found.");
     const { userId } = await requireOrgAccess(ctx, stack.orgId, "page.write");
@@ -65,7 +60,6 @@ export const list = query({
   args: { orgId: v.id("organizations") },
   returns: v.array(stackView),
   handler: async (ctx, { orgId }) => {
-    requireEnabled();
     await requireOrgAccess(ctx, orgId, "page.read");
     const stacks = await ctx.db.query("stacks").withIndex("by_org", (q) => q.eq("orgId", orgId)).take(100);
     const result: Array<{ stackId: Id<"stacks">; name: string; published: boolean; expiresAt?: number; version: number; updatedAt: number }> = [];
@@ -81,7 +75,6 @@ export const publish = mutation({
   args: { stackId: v.id("stacks"), expiresAt: v.optional(v.number()) },
   returns: v.null(),
   handler: async (ctx, { stackId, expiresAt }) => {
-    requireEnabled();
     const stack = await ctx.db.get(stackId);
     if (!stack) fail("not_found", "Stack not found.");
     await requireOrgAccess(ctx, stack.orgId, "page.publish");
@@ -106,7 +99,6 @@ export const lookup = mutation({
   args: { stackId: v.id("stacks"), lookupId: v.string(), pin: v.string(), visitorHash: v.string() },
   returns: lookupResult,
   handler: async (ctx, { stackId, lookupId, pin, visitorHash }) => {
-    requireEnabled();
     const stack = await ctx.db.get(stackId);
     if (!stack || !stack.published || (stack.expiresAt !== undefined && stack.expiresAt <= Date.now())) return { ok: false as const, code: "not_found" as const, message: LOOKUP_MESSAGE };
     const idHash = await hash(lookupId.trim());
@@ -138,7 +130,6 @@ export const published = query({
   args: { stackId: v.id("stacks") },
   returns: v.union(v.null(), v.object({ stackId: v.id("stacks"), name: v.string(), definition: v.any(), expiresAt: v.optional(v.number()) })),
   handler: async (ctx, { stackId }) => {
-    requireEnabled();
     const stack = await ctx.db.get(stackId);
     if (!stack || !stack.published) return null;
     const version = stack.currentVersionId ? await ctx.db.get(stack.currentVersionId) : null;
@@ -150,7 +141,6 @@ export const get = query({
   args: { stackId: v.id("stacks") },
   returns: v.object({ stackId: v.id("stacks"), orgId: v.id("organizations"), name: v.string(), published: v.boolean(), definition: v.any(), version: v.number() }),
   handler: async (ctx, { stackId }) => {
-    requireEnabled();
     const stack = await ctx.db.get(stackId);
     if (!stack) fail("not_found", "Stack not found.");
     await requireOrgAccess(ctx, stack.orgId, "page.read");

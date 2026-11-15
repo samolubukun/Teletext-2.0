@@ -10,6 +10,7 @@ const body = z.object({ lookupId: z.string().trim().min(1).max(80), pin: z.strin
 const stackId = z.string().min(1);
 
 export async function POST(request: Request, context: { params: Promise<{ stackId: string }> }) {
+  if (process.env.NEXT_PUBLIC_STACKS_ENABLED !== "true") return Response.json({ error: { code: "disabled", message: "Stacks are not enabled." } }, { status: 404 });
   const { stackId: raw } = await context.params;
   const parsed = body.safeParse(await readSmallJson(request, 500));
   const visitor = visitorHash(request);

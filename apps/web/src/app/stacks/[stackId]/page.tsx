@@ -5,6 +5,7 @@ import { StackReader } from "@/components/stacks/StackReader";
 import { convexConfigured } from "@/lib/convexServer";
 
 async function loadStack(stackId: string) {
+  if (process.env.NEXT_PUBLIC_STACKS_ENABLED !== "true") return null;
   if (!convexConfigured()) return null;
   try {
     return await fetchQuery(api.stacks.published, { stackId: stackId as Id<"stacks"> });

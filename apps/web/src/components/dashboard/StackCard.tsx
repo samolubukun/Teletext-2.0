@@ -19,11 +19,13 @@ const DEMO_STACK = {
 };
 
 export function StackCard({ orgId }: { orgId: Id<"organizations"> }) {
+  const enabled = process.env.NEXT_PUBLIC_STACKS_ENABLED === "true";
   const stacks = useQuery(api.stacks.list, { orgId });
   const create = useMutation(api.stacks.create);
   const publish = useMutation(api.stacks.publish);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  if (!enabled) return null;
   const makeDemo = async () => {
     setBusy(true); setError(null);
     try {
