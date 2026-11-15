@@ -21,6 +21,7 @@ import type * as pages from "../pages.js";
 import type * as public_ from "../public.js";
 import type * as reports from "../reports.js";
 import type * as seed from "../seed.js";
+import type * as stacks from "../stacks.js";
 import type * as team from "../team.js";
 import type * as traffic from "../traffic.js";
 
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   public: typeof public_;
   reports: typeof reports;
   seed: typeof seed;
+  stacks: typeof stacks;
   team: typeof team;
   traffic: typeof traffic;
 }>;

@@ -141,6 +141,38 @@ export default defineSchema({
   /** Fixed-window counters for public writes. The key holds only salted hashes. */
   rateLimits: defineTable({ key: v.string(), windowStart: v.number(), count: v.number() }).index("by_key", ["key"]),
 
+  /** Stage 2 stack definitions. The current version is selected only when published. */
+  stacks: defineTable({
+    orgId: v.id("organizations"),
+    name: v.string(),
+    currentVersionId: v.optional(v.id("stackVersions")),
+    published: v.boolean(),
+    expiresAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_org_name", ["orgId", "name"]),
+
+  stackVersions: defineTable({
+    stackId: v.id("stacks"),
+    version: v.number(),
+    definition: v.any(),
+    createdBy: v.string(),
+    createdAt: v.number(),
+  }).index("by_stack_version", ["stackId", "version"]),
+
+  /** Lookup data stores only hashed identifiers and PINs. Values contain reader-safe result fields. */
+  lookupRows: defineTable({
+    stackId: v.id("stacks"),
+    versionId: v.id("stackVersions"),
+    table: v.string(),
+    lookupIdHash: v.string(),
+    pinHash: v.string(),
+    values: v.any(),
+  })
+    .index("by_stack_lookup", ["stackId", "table", "lookupIdHash"])
+    .index("by_stack", ["stackId"]),
+
   /** Append-only record of sensitive actions. Holds user ids and page numbers, never page text. */
   auditLog: defineTable({
     orgId: v.id("organizations"),
