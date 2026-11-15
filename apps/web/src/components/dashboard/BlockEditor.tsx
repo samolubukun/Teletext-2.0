@@ -131,9 +131,7 @@ export function BlockEditor({ blocks, onChange, disabled }: { blocks: Block[]; o
         </div>
       ))}
       <div className="flex flex-wrap gap-2">
-        {(Object.keys(NEW_BLOCK) as Block["type"][])
-          .filter((t) => t !== "mosaic")
-          .map((t) => (
+        {(Object.keys(NEW_BLOCK) as Block["type"][]).map((t) => (
             <button key={t} type="button" className="rounded border border-neutral-700 px-2 py-1 font-mono text-xs hover:bg-neutral-800" onClick={() => onChange([...blocks, NEW_BLOCK[t]()])}>
               + {LABELS[t]}
             </button>
