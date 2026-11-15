@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Button, Card, Shell, errorMessage } from "./ui";
+import { StackReader } from "@/components/stacks/StackReader";
 
 export function StackEditor({ orgId, stackId }: { orgId: Id<"organizations">; stackId: Id<"stacks"> }) {
   const data = useQuery(api.stacks.get, { stackId });
@@ -15,8 +16,10 @@ export function StackEditor({ orgId, stackId }: { orgId: Id<"organizations">; st
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<Array<{ lookupId: string; pin: string; values: Record<string, string> }>>([]);
+  const [play, setPlay] = useState(false);
   if (data === undefined) return <Shell><p className="text-sm text-neutral-400">Loading...</p></Shell>;
   const value = json ?? JSON.stringify(data.definition, null, 2);
+  const parseForPlay = (): unknown => { try { return JSON.parse(value); } catch { return data.definition; } };
   const importCsv = async (file: File | undefined) => {
     if (!file) return;
     const text = await file.text();
@@ -62,6 +65,11 @@ export function StackEditor({ orgId, stackId }: { orgId: Id<"organizations">; st
       <textarea className="min-h-[520px] w-full rounded border border-neutral-700 bg-neutral-950 p-3 font-mono text-xs" value={value} onChange={(e) => setJson(e.target.value)} spellCheck={false} aria-label="Stack JSON definition" />
       {message && <p className="mt-3 text-sm text-cyan-300" role="status">{message}</p>}
       <div className="mt-3 flex gap-2"><Button disabled={busy} onClick={() => void run("save")}>{busy ? "Working..." : "Save draft"}</Button><Button variant="green" disabled={busy} onClick={() => void run("publish")}>Save and publish</Button></div>
+    </Card>
+    <Card title="Card map">
+      <div className="flex flex-wrap gap-2" aria-label="Stack card map">{(() => { try { const parsed = JSON.parse(value) as { cards?: Array<{ id: string; page: number; title: string }> }; return (parsed.cards ?? []).map((card, index) => <span key={card.id} className="rounded border border-cyan-700 px-2 py-1 font-mono text-xs text-cyan-300">{index + 1}. {card.id} / {card.page} - {card.title}</span>); } catch { return <span className="text-xs text-red-400">Fix the JSON to see the card map.</span>; } })()}</div>
+      <div className="mt-3"><Button variant="ghost" onClick={() => setPlay((current) => !current)}>{play ? "Close Play mode" : "Play this stack"}</Button></div>
+      {play && <div className="mt-3 rounded border border-neutral-700 p-2"><StackReader stackId={stackId} name={data.name} definition={parseForPlay()} /></div>}
     </Card>
     <Card title="Inbox">
       {submissions === undefined ? <p className="text-sm text-neutral-400">Loading...</p> : submissions.length === 0 ? <p className="text-sm text-neutral-400">No submissions yet.</p> : <ul className="flex flex-col gap-2 font-mono text-xs">{submissions.map((submission) => <li key={submission.submissionId} className="rounded border border-neutral-800 p-2"><div className="flex justify-between gap-2"><span className="text-cyan-300">{submission.reference}</span><span>{submission.status}</span></div><pre className="mt-1 whitespace-pre-wrap text-neutral-300">{JSON.stringify(submission.fields, null, 2)}</pre>{submission.status === "open" && <Button variant="ghost" onClick={() => void markDone({ submissionId: submission.submissionId })}>Mark done</Button>}</li>)}</ul>}

@@ -10,6 +10,7 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
   const first = stack?.cards.find((c) => c.id === stack.startCard);
   const [state, setState] = useState<StackState>(() => ({ cardId: stack?.startCard ?? "", variables: {}, fields: {} }));
   const [message, setMessage] = useState<string | null>(null);
+  const [resultValues, setResultValues] = useState<Record<string, string> | null>(null);
   const [busy, setBusy] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
 
@@ -19,6 +20,7 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
 
   const press = async (key: string, scriptButton?: { script: string }) => {
     setMessage(null);
+    setResultValues(null);
     const result = run(stack, { ...state, fields: values }, { type: "button", key });
     setState(result.state);
     const nav = result.effects.find((e) => e.type === "navigate");
@@ -43,6 +45,7 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
         const data = (await response.json()) as { ok?: boolean; values?: Record<string, string>; error?: { message?: string }; message?: string };
         if (data.ok && data.values) {
           setState((s) => ({ ...s, variables: { ...s.variables, row: data.values! } }));
+          setResultValues(data.values);
           setMessage(`Result found: ${Object.entries(data.values).map(([k, v]) => `${k}: ${v}`).join(" | ")}`);
         } else setMessage(data.error?.message ?? data.message ?? "The details could not be found.");
       } catch { setMessage("Lookup is unavailable. Try again."); }
@@ -55,6 +58,7 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
     <main className="mx-auto flex max-w-2xl flex-col gap-3 p-3">
       <h1 className="font-mono text-yellow-300">{name}</h1>
       <div className="tt-frame tt-classic"><TeletextScreen page={page} /></div>
+      {resultValues && <div className="rounded border border-green-700 p-3 font-mono text-sm text-green-300" aria-label="Lookup result"><h2 className="mb-2 text-yellow-300">RESULT</h2>{Object.entries(resultValues).map(([key, value]) => <p key={key}><span className="text-neutral-400">{key}:</span> {value}</p>)}</div>}
       {card.fields.map((field) => (
         <label key={field.id} className="flex flex-col gap-1 font-mono text-sm">
           {field.label}
