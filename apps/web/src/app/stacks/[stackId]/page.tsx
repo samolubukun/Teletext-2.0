@@ -4,6 +4,9 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { StackReader } from "@/components/stacks/StackReader";
 import { convexConfigured } from "@/lib/convexServer";
 
+// Published stacks are runtime data and must not be prerendered during the build.
+export const instant = false;
+
 async function loadStack(stackId: string) {
   if (process.env.NEXT_PUBLIC_STACKS_ENABLED !== "true") return null;
   if (!convexConfigured()) return null;
