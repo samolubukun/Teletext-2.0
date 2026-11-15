@@ -14,10 +14,11 @@ jobs:
           cache: npm
       - run: npm install --no-audit --no-fund
       - run: npm run check:boundary
-      - run: npm run typecheck --workspace @teletext/core --workspace @teletext/ai
-      - run: npm test --workspace @teletext/core --workspace @teletext/ai
+      - run: npm run typecheck
+      - run: npm test
         env:
           FC_RUNS: "1000"
+      - run: npm run lint
 
   build:
     runs-on: ubuntu-latest
