@@ -2,7 +2,7 @@
 // Turns a logo or picture into mosaic rows. The picture is decoded in this browser and never uploaded:
 // only a small grid of brightness values goes to the (pure) converter in @teletext/core.
 import { MOSAIC_MAX_COLS, imageToMosaic, suggestInvert, type GrayImage, type MosaicOptions } from "@teletext/core";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const ACCEPTED = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -40,6 +40,14 @@ export function MosaicImporter({ onApply }: { onApply: (rows: string[]) => void 
   const [settings, setSettings] = useState<Settings>({ maxCols: 30, invert: false, dither: false, auto: true, threshold: 128 });
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const run = (img: GrayImage, s: Settings) => {
     const result = imageToMosaic(img, { maxCols: s.maxCols, invert: s.invert, dither: s.dither, threshold: s.auto ? "auto" : s.threshold });
@@ -60,6 +68,10 @@ export function MosaicImporter({ onApply }: { onApply: (rows: string[]) => void 
     if (file.size > MAX_BYTES) return setError("That picture is over 2 MB. Pick a smaller one.");
     try {
       const img = await decode(file);
+      setPreviewUrl((old) => {
+        if (old) URL.revokeObjectURL(old);
+        return URL.createObjectURL(file);
+      });
       const next = { ...settings, invert: suggestInvert(img) };
       setImage(img);
       setSettings(next);
@@ -74,7 +86,24 @@ export function MosaicImporter({ onApply }: { onApply: (rows: string[]) => void 
       <p className="mb-2 text-neutral-300">
         Make mosaic art from a logo or picture. It is converted in your browser and not uploaded. Simple, high-contrast pictures work best.
       </p>
-      <input type="file" accept={ACCEPTED.join(",")} onChange={(e) => void onFile(e.target.files?.[0])} aria-label="Choose a picture for the mosaic" />
+      <input ref={fileInput} id="mosaic-file" className="sr-only" type="file" accept={ACCEPTED.join(",")} onChange={(e) => void onFile(e.target.files?.[0])} aria-label="Choose a picture for the mosaic" />
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className="rounded bg-cyan-400 px-3 py-2 font-mono text-xs font-bold text-black hover:bg-cyan-300" onClick={() => fileInput.current?.click()}>
+          Upload image for mosaic
+        </button>
+        <span className="text-neutral-400">PNG, JPG, WebP or GIF. Max 2 MB.</span>
+      </div>
+      {previewUrl && (
+        <div className="mt-3 flex items-center gap-3 rounded border border-neutral-800 p-2">
+          <img src={previewUrl} alt="Selected picture preview" className="h-20 w-20 object-contain" />
+          <div>
+            <p className="text-green-400">Picture selected</p>
+            <button type="button" className="mt-1 text-cyan-300 underline" onClick={() => fileInput.current?.click()}>
+              Choose a different picture
+            </button>
+          </div>
+        </div>
+      )}
       {error && <p className="mt-2 text-red-400" role="alert">{error}</p>}
       {image && (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
