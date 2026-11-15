@@ -8,6 +8,7 @@ import { useState } from "react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
 import { AnalyticsCard, AuditCard, ReportsCard } from "@/components/dashboard/InsightCards";
+import { StackCard } from "@/components/dashboard/StackCard";
 import { TeamCard } from "@/components/dashboard/TeamCard";
 import { Button, Card, Shell, StatusBadge, errorMessage, inputClass } from "@/components/dashboard/ui";
 
@@ -135,6 +136,7 @@ export default function OrgPage() {
             </Card>
           )}
 
+          <StackCard orgId={id} />
           <ReportsCard orgId={id} canPublish={org.canPublish} />
           <AnalyticsCard orgId={id} />
           {org.role === "owner" && <TeamCard orgId={id} />}

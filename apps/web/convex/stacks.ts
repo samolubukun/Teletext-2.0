@@ -132,3 +132,30 @@ export const lookupRow = internalQuery({
     return row ? { pinHash: row.pinHash, values: row.values } : null;
   },
 });
+
+/** Public metadata and card definition for a published stack. Lookup rows are never returned. */
+export const published = query({
+  args: { stackId: v.id("stacks") },
+  returns: v.union(v.null(), v.object({ stackId: v.id("stacks"), name: v.string(), definition: v.any(), expiresAt: v.optional(v.number()) })),
+  handler: async (ctx, { stackId }) => {
+    requireEnabled();
+    const stack = await ctx.db.get(stackId);
+    if (!stack || !stack.published) return null;
+    const version = stack.currentVersionId ? await ctx.db.get(stack.currentVersionId) : null;
+    return version ? { stackId: stack._id, name: stack.name, definition: version.definition, expiresAt: stack.expiresAt } : null;
+  },
+});
+
+export const get = query({
+  args: { stackId: v.id("stacks") },
+  returns: v.object({ stackId: v.id("stacks"), orgId: v.id("organizations"), name: v.string(), published: v.boolean(), definition: v.any(), version: v.number() }),
+  handler: async (ctx, { stackId }) => {
+    requireEnabled();
+    const stack = await ctx.db.get(stackId);
+    if (!stack) fail("not_found", "Stack not found.");
+    await requireOrgAccess(ctx, stack.orgId, "page.read");
+    const version = stack.currentVersionId ? await ctx.db.get(stack.currentVersionId) : null;
+    if (!version) fail("invalid_stack", "Stack has no saved definition.");
+    return { stackId: stack._id, orgId: stack.orgId, name: stack.name, published: stack.published, definition: version.definition, version: version.version };
+  },
+});

@@ -28,6 +28,7 @@ describe("Stack format and CardScript ST1-ST10", () => {
 
   it("ST2/ST4 example: valid commands parse and forbidden commands fail with a position", () => {
     expect(parseCardScript('go to card result\nshow message "Done"\nclear fields')).toMatchObject({ ok: true });
+    expect(parseCardScript('add 1 to score\nsubmit form contact')).toMatchObject({ ok: true });
     const bad = parseCardScript("eval(something)");
     expect(bad).toMatchObject({ ok: false });
     if (!bad.ok) expect(bad.diagnostics[0]?.position).toBeGreaterThanOrEqual(0);

@@ -28,7 +28,9 @@ export type Expr = { kind: "text" | "number" | "variable" | "row"; value: string
 export type Statement =
   | { kind: "go"; target: { type: "card" | "page"; value: string } }
   | { kind: "set"; variable: string; value: Expr }
+  | { kind: "add"; amount: number; variable: string }
   | { kind: "show"; message: string }
+  | { kind: "submit"; formId: string }
   | { kind: "clear" }
   | { kind: "lookup"; table: string; conditions: { column: string; variable: string; secret: boolean }[]; into: string };
 export type Script = { statements: Statement[] };
@@ -63,7 +65,9 @@ export function parseCardScript(source: string): { ok: true; script: Script } | 
       const value = expr(m[2]!);
       if ("message" in value) return { ok: false, diagnostics: [diag(value.message, at, value.code)] };
       statements.push({ kind: "set", variable: m[1]!, value });
-    } else if ((m = /^show message\s+"((?:[^"\\]|\\.)*)"$/i.exec(line))) statements.push({ kind: "show", message: m[1]! });
+    } else if ((m = /^add\s+(-?\d+(?:\.\d+)?)\s+to\s+([a-z][a-z0-9_]{0,39})$/i.exec(line))) statements.push({ kind: "add", amount: Number(m[1]), variable: m[2]! });
+    else if ((m = /^submit form\s+([a-z][a-z0-9_-]{0,39})$/i.exec(line))) statements.push({ kind: "submit", formId: m[1]! });
+    else if ((m = /^show message\s+"((?:[^"\\]|\\.)*)"$/i.exec(line))) statements.push({ kind: "show", message: m[1]! });
     else if (/^clear fields$/i.test(line)) statements.push({ kind: "clear" });
     else if ((m = /^lookup\s+([a-z][a-z0-9_-]{0,39})\s+by\s+(.+)\s+into\s+([a-z][a-z0-9_]{0,39})$/i.exec(line))) {
       const conditions = m[2]!.split(/\s+and\s+/i).map((part) => {
@@ -107,6 +111,7 @@ export type StackEvent = { type: "button"; key: string } | { type: "enter" } | {
 export type Effect =
   | { type: "navigate"; cardId?: string; page?: number }
   | { type: "message"; text: string }
+  | { type: "submit"; formId: string; fields: Record<string, string> }
   | { type: "clear_fields" }
   | { type: "lookup"; table: string; conditions: { column: string; variable: string; secret: boolean }[]; into: string };
 export type RunResult = { state: StackState; effects: Effect[]; steps: number };
@@ -130,6 +135,8 @@ export function run(stack: Stack, state: StackState, event: StackEvent): RunResu
     if (effects.length + 1 > MAX_STEPS) return { state: { ...next, error: "This action took too long." }, effects, steps: MAX_STEPS };
     if (statement.kind === "go") effects.push(statement.target.type === "card" ? { type: "navigate", cardId: statement.target.value } : { type: "navigate", page: Number(statement.target.value) });
     else if (statement.kind === "set") next.variables[statement.variable] = statement.value.kind === "variable" ? next.variables[String(statement.value.value)] ?? null : statement.value.value as string | number;
+    else if (statement.kind === "add") next.variables[statement.variable] = Number(next.variables[statement.variable] ?? 0) + statement.amount;
+    else if (statement.kind === "submit") effects.push({ type: "submit", formId: statement.formId, fields: { ...next.fields } });
     else if (statement.kind === "show") { next.message = statement.message; effects.push({ type: "message", text: statement.message }); }
     else if (statement.kind === "clear") { next.fields = {}; effects.push({ type: "clear_fields" }); }
     else if (statement.kind === "lookup") effects.push({ type: "lookup", table: statement.table, conditions: statement.conditions, into: statement.into });
