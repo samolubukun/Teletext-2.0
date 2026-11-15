@@ -10,7 +10,7 @@ async function ReaderAt({ params }: { params: Promise<{ number: string; sub?: st
   return <Reader initialNumber={valid ? n : 100} initialSub={Number.isInteger(s) && s >= 1 ? s : 1} />;
 }
 
-export default function ShortLink(props: PageProps<"/p/[number]/[[...sub]]">) {
+export default function ShortLink(props: { params: Promise<{ number: string; sub?: string[] }> }) {
   return (
     <main>
       {/* The fallback must not be a second Reader: it would fetch page 100 and rewrite the address bar. */}
