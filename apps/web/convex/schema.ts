@@ -173,6 +173,18 @@ export default defineSchema({
     .index("by_stack_lookup", ["stackId", "table", "lookupIdHash"])
     .index("by_stack", ["stackId"]),
 
+  /** Public form submissions. Fields are retained only for the publisher's inbox. */
+  submissions: defineTable({
+    stackId: v.id("stacks"),
+    formId: v.string(),
+    fields: v.any(),
+    reference: v.string(),
+    status: v.union(v.literal("open"), v.literal("done")),
+    createdAt: v.number(),
+  })
+    .index("by_stack", ["stackId"])
+    .index("by_stack_status", ["stackId", "status"]),
+
   /** Append-only record of sensitive actions. Holds user ids and page numbers, never page text. */
   auditLog: defineTable({
     orgId: v.id("organizations"),

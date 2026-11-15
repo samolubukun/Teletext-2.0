@@ -25,6 +25,16 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
     if (nav?.type === "navigate" && nav.cardId) setState((s) => ({ ...s, cardId: nav.cardId! }));
     const msg = result.effects.find((e) => e.type === "message");
     if (msg?.type === "message") setMessage(msg.text);
+    const submit = result.effects.find((e) => e.type === "submit");
+    if (submit?.type === "submit") {
+      setBusy(true);
+      try {
+        const response = await fetch(`/api/stacks/${stackId}/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ formId: submit.formId, fields: submit.fields }) });
+        const data = (await response.json()) as { reference?: string; error?: { message?: string } };
+        setMessage(data.reference ? `Submitted. Reference: ${data.reference}` : data.error?.message ?? "The form could not be sent.");
+      } catch { setMessage("The form is unavailable. Try again."); }
+      finally { setBusy(false); }
+    }
     const lookup = result.effects.find((e) => e.type === "lookup");
     if (lookup?.type === "lookup") {
       setBusy(true);

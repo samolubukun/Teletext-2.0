@@ -9,6 +9,8 @@ export function StackEditor({ orgId, stackId }: { orgId: Id<"organizations">; st
   const data = useQuery(api.stacks.get, { stackId });
   const save = useMutation(api.stacks.save);
   const publish = useMutation(api.stacks.publish);
+  const submissions = useQuery(api.forms.list, { stackId });
+  const markDone = useMutation(api.forms.markDone);
   const [json, setJson] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,6 +62,9 @@ export function StackEditor({ orgId, stackId }: { orgId: Id<"organizations">; st
       <textarea className="min-h-[520px] w-full rounded border border-neutral-700 bg-neutral-950 p-3 font-mono text-xs" value={value} onChange={(e) => setJson(e.target.value)} spellCheck={false} aria-label="Stack JSON definition" />
       {message && <p className="mt-3 text-sm text-cyan-300" role="status">{message}</p>}
       <div className="mt-3 flex gap-2"><Button disabled={busy} onClick={() => void run("save")}>{busy ? "Working..." : "Save draft"}</Button><Button variant="green" disabled={busy} onClick={() => void run("publish")}>Save and publish</Button></div>
+    </Card>
+    <Card title="Inbox">
+      {submissions === undefined ? <p className="text-sm text-neutral-400">Loading...</p> : submissions.length === 0 ? <p className="text-sm text-neutral-400">No submissions yet.</p> : <ul className="flex flex-col gap-2 font-mono text-xs">{submissions.map((submission) => <li key={submission.submissionId} className="rounded border border-neutral-800 p-2"><div className="flex justify-between gap-2"><span className="text-cyan-300">{submission.reference}</span><span>{submission.status}</span></div><pre className="mt-1 whitespace-pre-wrap text-neutral-300">{JSON.stringify(submission.fields, null, 2)}</pre>{submission.status === "open" && <Button variant="ghost" onClick={() => void markDone({ submissionId: submission.submissionId })}>Mark done</Button>}</li>)}</ul>}
     </Card>
   </Shell>;
 }
