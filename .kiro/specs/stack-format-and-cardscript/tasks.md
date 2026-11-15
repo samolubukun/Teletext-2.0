@@ -9,5 +9,5 @@
 - [x] 7. Add Convex stack tables and org-scoped permissions behind `STACKS_ENABLED`.
 - [x] 8. Add server-side lookup table upload with hashed PINs and rate limiting.
 - [x] 9. Add lookup reader route and input mode.
-- [x] 10. Add dashboard stack editor, JSON preview, CSV lookup import, publisher inbox, and public play link.
-- [ ] 11. Add visual card map, AI Stack generator, and Playwright live coverage.
+- [x] 10. Add dashboard stack editor, JSON preview, CSV lookup import, publisher inbox, card map, and Play mode.
+- [ ] 11. Add AI Stack generator and Playwright live coverage.
