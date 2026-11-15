@@ -6,3 +6,4 @@ export * from "./condense";
 export * from "./fallback-models";
 export * from "./eval";
 export * from "./eval-cases";
+export * from "./stack";

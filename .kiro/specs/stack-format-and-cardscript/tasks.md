@@ -11,3 +11,9 @@
 - [x] 9. Add lookup reader route and input mode.
 - [x] 10. Add dashboard stack editor, JSON preview, CSV lookup import, publisher inbox, card map, and Play mode.
 - [ ] 11. Add AI Stack generator and Playwright live coverage.
+
+- [x] 11. Add AI Stack generator and Playwright live coverage.
+  - Generator validates with `@teletext/stacks`, repairs once, and falls back to an unpublished blank template.
+  - Gemini receives descriptions plus template/column metadata only. It never receives lookup rows, PINs, or submissions.
+  - Route is server-only, auth/rate-limited through Convex, and disabled unless `NEXT_PUBLIC_STACKS_ENABLED=true`.
+  - Offline generator properties and examples live in `packages/ai/test/stack.test.ts`. Live lookup coverage remains deployment-gated by `E2E_BASE_URL` and `E2E_STACK_ENABLED`.
