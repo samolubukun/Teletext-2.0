@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const client = new GoogleGenAI({ apiKey });
   const models = [process.env.GEMINI_MODEL || "gemini-3.5-flash-lite", process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite"];
   const call = withModelFallback(models, (model) => geminiCall(client, model));
-  const { orgId: _orgId, ...requestData } = parsed.data;
+  const requestData = { description: parsed.data.description, template: parsed.data.template, columns: parsed.data.columns };
   const result = await generateStack(requestData, call);
   return Response.json({ ...result, model: models[0] }, { headers: { "Cache-Control": "no-store" } });
 }
