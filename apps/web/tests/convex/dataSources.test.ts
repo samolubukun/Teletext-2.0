@@ -124,6 +124,40 @@ describe("data sources", () => {
       expect((await version(pageId)).version).toBe(first.version + 1);
     });
 
+    it("C8 regression: a public sheet answers with a redirect to googleusercontent.com and is followed (found on the live site)", async () => {
+      await pro();
+      const hosted = "https://doc-0c-8g-sheets.googleusercontent.com/export/abc123/xyz?format=csv&id=1AbCdEfGhIjKlMnOpQrStUvWxYz&token=" + "t".repeat(700);
+      fetchStub.mockImplementation((url: string) =>
+        Promise.resolve(url.startsWith("https://docs.google.com/") ? respond("", { status: 307, headers: { location: hosted } }) : respond("Route,Time\n12,08:00")),
+      );
+      await as(t, "owner_a").mutation(api.dataSources.link, { pageId, kind: "sheet", url: SHEET });
+      await settle();
+      expect(fetchStub.mock.calls.map((c) => new URL(String(c[0])).hostname)).toEqual(["docs.google.com", "doc-0c-8g-sheets.googleusercontent.com"]);
+      expect((await sourceOf(pageId))?.lastStatus).toBe("ok");
+      expect((await version(pageId)).blocks[1]).toMatchObject({ type: "table", header: ["Route", "Time"] });
+    });
+
+    it("C8: a private sheet (redirect to a sign-in page), an endless redirect loop and a redirect to an internal address are all refused", async () => {
+      await pro();
+      const cases: [string, string][] = [
+        ["https://accounts.google.com/ServiceLogin?continue=x", "not shared publicly"],
+        ["https://169.254.169.254/latest/meta-data", "not shared publicly"],
+        ["https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/export?format=csv&again=1", "too many times"],
+      ];
+      for (const [location, note] of cases) {
+        fetchStub.mockReset();
+        fetchStub.mockImplementation(() => Promise.resolve(respond("", { status: 302, headers: { location } })));
+        vi.advanceTimersByTime(2 * 60_000);
+        await as(t, "owner_a").mutation(api.dataSources.link, { pageId, kind: "sheet", url: SHEET });
+        await settle();
+        const s = await sourceOf(pageId);
+        expect(s?.lastStatus).toBe("error");
+        expect(s?.lastNote).toContain(note);
+        // Nothing was fetched from the internal address.
+        expect(fetchStub.mock.calls.every((c) => !String(c[0]).includes("169.254"))).toBe(true);
+      }
+    });
+
     it("C8: a feed becomes a list of headlines", async () => {
       await pro();
       fetchStub.mockImplementation(() => Promise.resolve(respond("<rss><channel><item><title>Road works on Ring Road</title><pubDate>Thu, 12 Nov 2026 08:00:00 GMT</pubDate></item></channel></rss>"))); // a Response body can be read only once

@@ -5,6 +5,7 @@ import {
   PLAN_LIMITS,
   SOURCE_LIMITS,
   blocksSchema,
+  checkRedirect,
   defaultFastext,
   feedBlocks,
   parseCsv,
@@ -33,6 +34,7 @@ function canonical(value: unknown): string {
 
 const kind = v.union(v.literal("rss"), v.literal("sheet"));
 const FETCH_TIMEOUT_MS = 10_000;
+const MAX_REDIRECTS = 3;
 const SYNC_NOW_COOLDOWN_MS = 60_000;
 const MAX_SOURCES_PER_RUN = 200;
 
@@ -161,14 +163,24 @@ export const sync = internalAction({
     const checked = validateSourceUrl(source.kind, source.url);
     if (!checked.ok) return await report(checked.reason);
     try {
-      const res = await fetch(checked.url, {
-        redirect: "manual",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        headers: { Accept: source.kind === "sheet" ? "text/csv" : "application/rss+xml, application/atom+xml, text/xml, */*;q=0.5", "User-Agent": "Teletext2-DataSource/1.0" },
-      });
-      if (res.status >= 300 && res.status < 400) {
-        return await report(source.kind === "sheet" ? "The sheet is not shared publicly. In Google Sheets choose Share, then anyone with the link can view." : "The feed address redirects. Paste the final address.");
+      // Redirects are followed by hand, a few hops, each one checked first. A public Google Sheet answers with a redirect
+      // to googleusercontent.com; a private one redirects to a sign-in page, which checkRedirect refuses.
+      let url = checked.url;
+      let res: Response | null = null;
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+        res = await fetch(url, {
+          redirect: "manual",
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          headers: { Accept: source.kind === "sheet" ? "text/csv" : "application/rss+xml, application/atom+xml, text/xml, */*;q=0.5", "User-Agent": "Teletext2-DataSource/1.0" },
+        });
+        if (res.status < 300 || res.status >= 400) break;
+        const location = res.headers.get("location");
+        if (!location || hop === MAX_REDIRECTS) return await report("The source redirects too many times.");
+        const next = checkRedirect(source.kind, url, location);
+        if (!next.ok) return await report(next.reason);
+        url = next.url;
       }
+      if (!res) return await report("The source could not be reached.");
       if (!res.ok) return await report(`The source answered with error ${res.status}.`);
       const text = await readCapped(res, SOURCE_LIMITS.maxBytes);
       if (text === null) return await report("The source is too large (limit 200 KB).");

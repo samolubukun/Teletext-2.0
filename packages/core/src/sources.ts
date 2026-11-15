@@ -131,9 +131,9 @@ const BLOCKED_HOST = /(^|\.)(localhost|local|internal|localdomain|lan|home|corp)
  * Accepts only public https URLs. Refuses credentials, other ports, IP addresses and internal-looking names,
  * so a publisher cannot point the server at a private network. A Google Sheet link is rewritten to its CSV export link.
  */
-export function validateSourceUrl(kind: SourceKind, raw: string): UrlCheck {
+export function validateSourceUrl(kind: SourceKind, raw: string, maxLength = 500): UrlCheck {
   const input = raw.trim();
-  if (input.length === 0 || input.length > 500) return { ok: false, reason: "Paste a link of 1 to 500 characters." };
+  if (input.length === 0 || input.length > maxLength) return { ok: false, reason: `Paste a link of 1 to ${maxLength} characters.` };
   let u: URL;
   try {
     u = new URL(input);
@@ -175,4 +175,28 @@ export function sheetBlocks(title: string, rows: readonly (readonly string[])[])
 export function feedBlocks(title: string, items: readonly FeedItem[]): Block[] {
   if (items.length === 0) return [headingFor(title), { type: "paragraph", text: "No news yet." }];
   return [headingFor(title), { type: "bullets", items: items.map((i) => (i.date ? `${i.date}: ${i.title}` : i.title)) }];
+}
+
+const NOT_SHARED = "The sheet is not shared publicly. In Google Sheets choose Share, then anyone with the link can view.";
+
+/**
+ * Checks where a redirect points before the server follows it. Google answers a public sheet's CSV link with a redirect
+ * to a googleusercontent.com host, and a private sheet with a redirect to a sign-in page, so for sheets only
+ * docs.google.com and *.googleusercontent.com are followed. Every hop must also pass the normal public-address rules.
+ */
+export function checkRedirect(kind: SourceKind, from: string, location: string): UrlCheck {
+  let next: URL;
+  try {
+    next = new URL(location, from);
+  } catch {
+    return { ok: false, reason: "The source redirected to an address that is not valid." };
+  }
+  // Redirect addresses can be long (signed tokens), so the length limit is higher than for a pasted link.
+  const generic = validateSourceUrl("rss", next.toString(), 4000);
+  if (!generic.ok) return kind === "sheet" ? { ok: false, reason: NOT_SHARED } : generic;
+  if (kind === "sheet") {
+    const host = new URL(generic.url).hostname;
+    if (host !== "docs.google.com" && !host.endsWith(".googleusercontent.com")) return { ok: false, reason: NOT_SHARED };
+  }
+  return generic;
 }

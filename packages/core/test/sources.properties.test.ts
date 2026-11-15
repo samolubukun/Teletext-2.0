@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { blocksSchema } from "../src/schema";
-import { SOURCE_LIMITS, feedBlocks, parseCsv, parseFeed, sheetBlocks, shortDate, validateSourceUrl } from "../src/sources";
+import { SOURCE_LIMITS, checkRedirect, feedBlocks, parseCsv, parseFeed, sheetBlocks, shortDate, validateSourceUrl } from "../src/sources";
 import { RUNS } from "./arbitraries";
 
 const anyText = fc.oneof(
@@ -118,6 +118,30 @@ describe("data sources (data-connectors C1-C6)", () => {
     for (const url of ["https://docs.google.com.evil.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/edit", "https://example.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz", "https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/edit"]) {
       expect(validateSourceUrl("sheet", url).ok, url).toBe(false);
     }
+  });
+
+  it("C4b: checkRedirect never throws; a sheet only follows Google hosts, and nothing follows a private or internal address", () => {
+    const from = "https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/export?format=csv";
+    fc.assert(
+      fc.property(fc.constantFrom("rss", "sheet"), anyText, (kind, location) => {
+        const r = checkRedirect(kind, from, location);
+        if (r.ok) {
+          const u = new URL(r.url);
+          expect(u.protocol).toBe("https:");
+          expect(/^[0-9.]+$/.test(u.hostname)).toBe(false);
+          if (kind === "sheet") expect(u.hostname === "docs.google.com" || u.hostname.endsWith(".googleusercontent.com")).toBe(true);
+        }
+      }),
+      { numRuns: RUNS },
+    );
+    const ok = checkRedirect("sheet", from, "https://doc-0c-8g-sheets.googleusercontent.com/export/x?format=csv&token=" + "t".repeat(1000));
+    expect(ok.ok).toBe(true);
+    expect(checkRedirect("sheet", from, "/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/export?format=csv&gid=2").ok).toBe(true);
+    for (const bad of ["https://accounts.google.com/ServiceLogin", "https://evil.com/x", "http://doc-0c.googleusercontent.com/x", "https://127.0.0.1/x", "https://googleusercontent.com.evil.com/x", "javascript:alert(1)"]) {
+      expect(checkRedirect("sheet", from, bad).ok, bad).toBe(false);
+    }
+    expect(checkRedirect("rss", "https://news.example.org/a", "https://cdn.example.org/feed.xml").ok).toBe(true);
+    expect(checkRedirect("rss", "https://news.example.org/a", "https://10.0.0.1/feed.xml").ok).toBe(false);
   });
 
   it("C4 example: a sheet link becomes a CSV export link and keeps the tab", () => {
