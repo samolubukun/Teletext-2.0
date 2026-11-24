@@ -266,3 +266,8 @@ The model is not deterministic: the must-keep misses move from run to run and ne
 ## 2026-11-12 Stage 2 Stack generator
 
 Added the server-only Stack draft generator. It sends the description plus template and column metadata to Gemini, validates both Zod shape and CardScript diagnostics, retries once, and returns a valid unpublished blank template after failure. The route is disabled unless `NEXT_PUBLIC_STACKS_ENABLED=true` and uses the existing Convex AI authorization/rate limit. The offline fixture has four focused examples/properties; the existing 20-case condenser evaluation remains unchanged.
+
+## 2026-11-24 Manual checks by the owner
+
+- Data connectors: tried a real RSS/Atom feed on the deployed site, and it worked (the real Google Sheet was tried on 13 Nov). Feed URL and result details: to be added by the owner.
+- Mosaic logo tool: tried in the browser with a real logo and it worked. Details of the picture and settings: to be added by the owner.

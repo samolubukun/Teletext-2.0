@@ -12,9 +12,9 @@
 - [x] 9. Scheduled publish and expiry with `ctx.scheduler.runAt` (D6): pure rules in core/schedule.ts (S1-S4), pages.setSchedule + applySchedule, public route refuses expired pages, Schedule card; 12 convex-test cases
 - [x] 10. Fastext editor
 - [x] 10a. QR code and printable poster (`/dashboard/[orgId]/pages/[pageId]/poster`; QR decoded back in tests, survives 12% damage at five positions)
-- [ ] 10b. Mosaic logo tool
-- [ ] 11. Analytics page (Pro)
-- [ ] 12. Report-a-page and moderation queue
-- [ ] 13. Playwright demo path: sign in, paste, condense, publish, read
+- [x] 10b. Mosaic logo tool (`packages/core/src/mosaic.ts`, `MosaicImporter` in the block editor, M1-M7 tests)
+- [x] 11. Analytics page (Pro) (`convex/traffic.ts`, `/api/view`, `AnalyticsCard`)
+- [x] 12. Report-a-page and moderation queue (`convex/reports.ts`, `/api/report`, `ReportsCard`)
+- [x] 13. Playwright demo path: sign in, paste, condense, publish, read (`tests/e2e/demo-path.live.spec.ts`; passed live, see docs/kiro-notes.md)
 
 - [x] 3b. Team: one-time invite codes (hashed, 7 days), join page, owner-only role change and removal (apps/web/convex/team.ts, 11 convex-test cases)

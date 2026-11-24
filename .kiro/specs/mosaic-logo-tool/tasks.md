@@ -5,4 +5,4 @@
 - [x] 3. Property tests M1-M7 plus examples (`packages/core/test/mosaic.properties.test.ts`)
 - [x] 4. Layout fix: keep the all-dots character 0x7f (found by M6)
 - [x] 5. Editor: "Make mosaic art from a picture" inside the mosaic block (PNG, JPEG, WebP, GIF, 2 MB, decoded in the browser)
-- [ ] 6. Try it in the browser with a real logo and a photo, and note the result in docs/kiro-notes.md
+- [x] 6. Try it in the browser with a real logo and a photo, and note the result in docs/kiro-notes.md (tested by the owner, worked, see notes)

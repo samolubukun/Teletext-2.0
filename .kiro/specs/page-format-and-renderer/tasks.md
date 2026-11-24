@@ -76,9 +76,9 @@ so Kiro can finish one at a time. Run tests with `npm test --workspace @teletext
 
 ## Definition of done
 
-- [ ] All 15 properties pass with at least 1,000 runs each (`FC_RUNS=10000` before submission)
+- [x] All 15 properties pass with at least 1,000 runs each (`FC_RUNS=10000` before submission)
 - [x] All golden fixtures match
-- [ ] No `any` types, strict mode passes
+- [x] No `any` types, strict mode passes
 - [ ] Every warning has a plain-language message and a suggested fix
 - [ ] Notes and screenshots saved for the write-up
-- [ ] **Gate A (10,000 runs, re-run with FC_RUNS=10000):** 10,000 random inputs all produce valid pages
+- [x] **Gate A (10,000 runs, re-run with FC_RUNS=10000):** 10,000 random inputs all produce valid pages (all 57 core tests passed at 10,000 runs in 357 s, docs/kiro-notes.md, Thu 12 Nov)
