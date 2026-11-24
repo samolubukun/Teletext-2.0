@@ -17,7 +17,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
-  use: { baseURL: LIVE ?? `http://localhost:${PORT}`, trace: "retain-on-failure" },
+  use: { baseURL: LIVE ?? `http://localhost:${PORT}`, trace: "retain-on-failure", channel: "chrome" },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "phone", use: { ...devices["Pixel 7"] } },
