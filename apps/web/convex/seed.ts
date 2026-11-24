@@ -4,6 +4,7 @@ import { defaultFastext, type Block, type FastextLink } from "@teletext/core";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, type MutationCtx } from "./_generated/server";
+import { demoStacks } from "./lib/demoStacks";
 import { renderForOrg, searchTextOf } from "./lib/renderPage";
 
 const SEED_USER = "seed";
@@ -90,6 +91,7 @@ const ORGS: SeedOrg[] = [
               { label: "Place:", value: "Main hall" },
             ],
           },
+          { type: "paragraph", text: "Parents: look up your child's result online with an ID and PIN. Ask the office for the link." },
           { type: "paragraph", text: "Questions? Call the office: 0800 000 0000" },
         ],
       },
@@ -289,17 +291,42 @@ async function insertPage(ctx: MutationCtx, orgId: Id<"organizations">, page: Se
   await ctx.db.patch(pageId, { currentVersionId: versionId });
 }
 
+async function sha256(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+/** Adds the published demo stacks to an organization. Existing stacks (matched by name) are left alone. */
+async function ensureDemoStacks(ctx: MutationCtx, orgId: Id<"organizations">, now: number): Promise<number> {
+  let created = 0;
+  for (const demo of demoStacks()) {
+    const existing = await ctx.db.query("stacks").withIndex("by_org_name", (q) => q.eq("orgId", orgId).eq("name", demo.name)).first();
+    if (existing) continue;
+    const stackId = await ctx.db.insert("stacks", { orgId, name: demo.name, published: true, updatedAt: now });
+    const versionId = await ctx.db.insert("stackVersions", { stackId, version: 1, definition: demo.definition, createdBy: SEED_USER, createdAt: now });
+    await ctx.db.patch(stackId, { currentVersionId: versionId });
+    for (const row of demo.rows) {
+      await ctx.db.insert("lookupRows", { stackId, versionId, table: "results", lookupIdHash: await sha256(row.lookupId.trim()), pinHash: await sha256(row.pin), values: row.values });
+    }
+    for (const submission of demo.submissions) {
+      await ctx.db.insert("submissions", { stackId, formId: "contact", fields: submission.fields, reference: submission.reference, status: submission.status, createdAt: now - submission.hoursAgo * 3_600_000 });
+    }
+    created++;
+  }
+  return created;
+}
 export const run = internalMutation({
   args: {},
-  returns: v.object({ created: v.number(), skipped: v.number() }),
+  returns: v.object({ created: v.number(), skipped: v.number(), stacks: v.number() }),
   handler: async (ctx) => {
     const now = Date.now();
     let created = 0;
     let skipped = 0;
+    let stacks = 0;
     for (const seed of ORGS) {
       const existing = await ctx.db.query("organizations").withIndex("by_slug", (q) => q.eq("slug", seed.slug)).unique();
       if (existing) {
         skipped++;
+        if (seed.slug === "greenfield-high") stacks += await ensureDemoStacks(ctx, existing._id, now);
         continue;
       }
       const orgId = await ctx.db.insert("organizations", {
@@ -314,9 +341,10 @@ export const run = internalMutation({
       });
       await ctx.db.insert("members", { orgId, userId: SEED_USER, role: "owner" });
       for (const page of seed.pages) await insertPage(ctx, orgId, page, now);
+      if (seed.slug === "greenfield-high") stacks += await ensureDemoStacks(ctx, orgId, now);
       created++;
     }
-    return { created, skipped };
+    return { created, skipped, stacks };
   },
 });
 
@@ -327,6 +355,7 @@ export const claimDemo = internalMutation({
   handler: async (ctx, { userId, slug }) => {
     const org = await ctx.db.query("organizations").withIndex("by_slug", (q) => q.eq("slug", slug ?? "greenfield-high")).unique();
     if (!org) return "Run seed:run first.";
+    await ensureDemoStacks(ctx, org._id, Date.now());
     const existing = await ctx.db.query("members").withIndex("by_org_user", (q) => q.eq("orgId", org._id).eq("userId", userId)).unique();
     if (existing) await ctx.db.patch(existing._id, { role: "owner" });
     else await ctx.db.insert("members", { orgId: org._id, userId, role: "owner" });
