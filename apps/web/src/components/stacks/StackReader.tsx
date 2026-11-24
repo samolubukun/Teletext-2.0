@@ -1,15 +1,39 @@
 "use client";
 import { useMemo, useState } from "react";
-import { stackSchema, run, type Stack, type StackState } from "@teletext/stacks";
+import { stackSchema, resolveLookupCredentials, run, type Effect, type Stack, type StackState } from "@teletext/stacks";
 import { serializePage, render } from "@teletext/core";
 import { TeletextScreen } from "@/components/teletext/TeletextScreen";
+
+function targetOf(stack: Stack, effects: Effect[]): string | undefined {
+  const nav = effects.find((e) => e.type === "navigate");
+  if (nav?.type !== "navigate") return undefined;
+  return nav.cardId ?? stack.cards.find((c) => c.page === nav.page)?.id;
+}
+
+/** Moves to `target` and runs each card's onEnter script, following any go-to it makes (at most 5 hops, so a loop cannot hang the page). */
+function enterChain(stack: Stack, from: StackState, values: Record<string, string>, target: string | undefined): { state: StackState; message?: string } {
+  let state = from;
+  let message: string | undefined;
+  let next = target;
+  for (let hop = 0; next && stack.cards.some((c) => c.id === next) && hop < 5; hop++) {
+    state = { ...state, cardId: next };
+    const entered = run(stack, { ...state, fields: values, variables: { ...state.variables, ...values } }, { type: "enter" });
+    state = entered.state;
+    const text = entered.effects.find((e) => e.type === "message");
+    if (text?.type === "message") message = text.text;
+    next = targetOf(stack, entered.effects);
+  }
+  return message === undefined ? { state } : { state, message };
+}
 
 export function StackReader({ stackId, name, definition }: { stackId: string; name: string; definition: unknown }) {
   const parsed = useMemo(() => stackSchema.safeParse(definition), [definition]);
   const stack = parsed.success ? parsed.data : null;
   const first = stack?.cards.find((c) => c.id === stack.startCard);
-  const [state, setState] = useState<StackState>(() => ({ cardId: stack?.startCard ?? "", variables: {}, fields: {} }));
-  const [message, setMessage] = useState<string | null>(null);
+  // The start card's onEnter script runs once, when the reader opens.
+  const [boot] = useState(() => (stack ? enterChain(stack, { cardId: stack.startCard, variables: {}, fields: {} }, {}, stack.startCard) : null));
+  const [state, setState] = useState<StackState>(() => boot?.state ?? { cardId: stack?.startCard ?? "", variables: {}, fields: {} });
+  const [message, setMessage] = useState<string | null>(() => boot?.message ?? null);
   const [resultValues, setResultValues] = useState<Record<string, string> | null>(null);
   const [busy, setBusy] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -21,12 +45,14 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
   const press = async (key: string, scriptButton?: { script: string }) => {
     setMessage(null);
     setResultValues(null);
-    const result = run(stack, { ...state, fields: values }, { type: "button", key });
-    setState(result.state);
-    const nav = result.effects.find((e) => e.type === "navigate");
-    if (nav?.type === "navigate" && nav.cardId) setState((s) => ({ ...s, cardId: nav.cardId! }));
+    // Field values are also readable as variables, so quiz scripts can test a choice field.
+    const result = run(stack, { ...state, fields: values, variables: { ...state.variables, ...values } }, { type: "button", key });
+    // Follow go-to effects and run each new card's onEnter script (at most 5 hops, so a loop cannot hang the page).
+    const { state: next, message: enterMessage } = enterChain(stack, result.state, values, targetOf(stack, result.effects));
+    setState(next);
     const msg = result.effects.find((e) => e.type === "message");
-    if (msg?.type === "message") setMessage(msg.text);
+    const shown = enterMessage ?? (msg?.type === "message" ? msg.text : undefined);
+    if (shown) setMessage(shown);
     const submit = result.effects.find((e) => e.type === "submit");
     if (submit?.type === "submit") {
       setBusy(true);
@@ -41,7 +67,7 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
     if (lookup?.type === "lookup") {
       setBusy(true);
       try {
-        const response = await fetch(`/api/stacks/${stackId}/lookup`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lookupId: values.sid ?? "", pin: values.pin ?? "" }) });
+        const response = await fetch(`/api/stacks/${stackId}/lookup`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resolveLookupCredentials(values, lookup.conditions, card.fields)) });
         const data = (await response.json()) as { ok?: boolean; values?: Record<string, string>; error?: { message?: string }; message?: string };
         if (data.ok && data.values) {
           setState((s) => ({ ...s, variables: { ...s.variables, row: data.values! } }));
@@ -62,7 +88,12 @@ export function StackReader({ stackId, name, definition }: { stackId: string; na
       {card.fields.map((field) => (
         <label key={field.id} className="flex flex-col gap-1 font-mono text-sm">
           {field.label}
-          <input className="rounded border border-neutral-700 bg-neutral-950 p-2" type={field.type === "secret" ? "password" : field.type === "number" ? "number" : "text"} maxLength={field.maxLength} value={values[field.id] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))} />
+          {field.type === "choice" ? (
+            <select className="rounded border border-neutral-700 bg-neutral-950 p-2" value={values[field.id] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}>
+              <option value="">Choose...</option>
+              {(field.options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          ) : <input className="rounded border border-neutral-700 bg-neutral-950 p-2" type={field.type === "secret" ? "password" : field.type === "number" ? "number" : "text"} maxLength={field.maxLength} value={values[field.id] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))} />}
         </label>
       ))}
       {message && <p role="status" className="rounded border border-yellow-700 p-2 font-mono text-sm text-yellow-200">{message}</p>}
