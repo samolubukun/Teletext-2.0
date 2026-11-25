@@ -2,7 +2,7 @@
 // Give a signed-in user ownership of Greenfield High: `npx convex run seed:claimDemo '{"userId":"<hexclave user id>"}'`.
 import { defaultFastext, type Block, type FastextLink } from "@teletext/core";
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Id, TableNames } from "./_generated/dataModel";
 import { internalMutation, type MutationCtx } from "./_generated/server";
 import { demoStacks } from "./lib/demoStacks";
 import { renderForOrg, searchTextOf } from "./lib/renderPage";
@@ -319,14 +319,14 @@ export const clear = internalMutation({
   args: {},
   returns: v.string(),
   handler: async (ctx) => {
-    const tables = [
+    const tables: TableNames[] = [
       "organizations", "members", "invites", "pages", "pageVersions",
       "aiUsage", "pageViews", "reports", "viewCounts", "dataSources",
       "rateLimits", "stacks", "stackVersions", "lookupRows", "submissions", "auditLog"
-    ] as const;
+    ];
     let deleted = 0;
     for (const table of tables) {
-      const rows = await ctx.db.query(table as any).collect();
+      const rows = await ctx.db.query(table).collect();
       for (const row of rows) {
         await ctx.db.delete(row._id);
         deleted++;
@@ -341,14 +341,14 @@ export const reset = internalMutation({
   args: {},
   returns: v.object({ cleared: v.number(), created: v.number(), skipped: v.number(), stacks: v.number() }),
   handler: async (ctx) => {
-    const tables = [
+    const tables: TableNames[] = [
       "organizations", "members", "invites", "pages", "pageVersions",
       "aiUsage", "pageViews", "reports", "viewCounts", "dataSources",
       "rateLimits", "stacks", "stackVersions", "lookupRows", "submissions", "auditLog"
-    ] as const;
+    ];
     let cleared = 0;
     for (const table of tables) {
-      const rows = await ctx.db.query(table as any).collect();
+      const rows = await ctx.db.query(table).collect();
       for (const row of rows) {
         await ctx.db.delete(row._id);
         cleared++;
@@ -356,7 +356,7 @@ export const reset = internalMutation({
     }
     const now = Date.now();
     let created = 0;
-    let skipped = 0;
+    const skipped = 0;
     let stacks = 0;
     for (const seed of ORGS) {
       const orgId = await ctx.db.insert("organizations", {
