@@ -314,6 +314,70 @@ async function ensureDemoStacks(ctx: MutationCtx, orgId: Id<"organizations">, no
   }
   return created;
 }
+/** Clears all data across all application tables. */
+export const clear = internalMutation({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    const tables = [
+      "organizations", "members", "invites", "pages", "pageVersions",
+      "aiUsage", "pageViews", "reports", "viewCounts", "dataSources",
+      "rateLimits", "stacks", "stackVersions", "lookupRows", "submissions", "auditLog"
+    ] as const;
+    let deleted = 0;
+    for (const table of tables) {
+      const rows = await ctx.db.query(table as any).collect();
+      for (const row of rows) {
+        await ctx.db.delete(row._id);
+        deleted++;
+      }
+    }
+    return `Cleared ${deleted} records from database.`;
+  },
+});
+
+/** Wipes the database and freshly seeds all organizations, pages, and demo stacks. */
+export const reset = internalMutation({
+  args: {},
+  returns: v.object({ cleared: v.number(), created: v.number(), skipped: v.number(), stacks: v.number() }),
+  handler: async (ctx) => {
+    const tables = [
+      "organizations", "members", "invites", "pages", "pageVersions",
+      "aiUsage", "pageViews", "reports", "viewCounts", "dataSources",
+      "rateLimits", "stacks", "stackVersions", "lookupRows", "submissions", "auditLog"
+    ] as const;
+    let cleared = 0;
+    for (const table of tables) {
+      const rows = await ctx.db.query(table as any).collect();
+      for (const row of rows) {
+        await ctx.db.delete(row._id);
+        cleared++;
+      }
+    }
+    const now = Date.now();
+    let created = 0;
+    let skipped = 0;
+    let stacks = 0;
+    for (const seed of ORGS) {
+      const orgId = await ctx.db.insert("organizations", {
+        name: seed.name,
+        slug: seed.slug,
+        plan: seed.plan,
+        rangeStart: seed.range[0],
+        rangeEnd: seed.range[1],
+        helpPage: seed.slug === "teletext" ? 101 : seed.range[0],
+        utcOffsetMinutes: 60,
+        category: seed.category,
+      });
+      await ctx.db.insert("members", { orgId, userId: SEED_USER, role: "owner" });
+      for (const page of seed.pages) await insertPage(ctx, orgId, page, now);
+      if (seed.slug === "greenfield-high") stacks += await ensureDemoStacks(ctx, orgId, now);
+      created++;
+    }
+    return { cleared, created, skipped, stacks };
+  },
+});
+
 export const run = internalMutation({
   args: {},
   returns: v.object({ created: v.number(), skipped: v.number(), stacks: v.number() }),

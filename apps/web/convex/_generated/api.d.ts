@@ -15,6 +15,7 @@ import type * as dataSources from "../dataSources.js";
 import type * as forms from "../forms.js";
 import type * as lib_access from "../lib/access.js";
 import type * as lib_audit from "../lib/audit.js";
+import type * as lib_demoStacks from "../lib/demoStacks.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
 import type * as lib_renderPage from "../lib/renderPage.js";
 import type * as orgs from "../orgs.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   forms: typeof forms;
   "lib/access": typeof lib_access;
   "lib/audit": typeof lib_audit;
+  "lib/demoStacks": typeof lib_demoStacks;
   "lib/rateLimit": typeof lib_rateLimit;
   "lib/renderPage": typeof lib_renderPage;
   orgs: typeof orgs;
