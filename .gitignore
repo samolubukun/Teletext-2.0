@@ -19,6 +19,8 @@ coverage/
 playwright-report/
 test-results/
 .vercel/
+records/
+*.mp4
 
 # OS and editor
 .DS_Store
