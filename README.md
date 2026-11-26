@@ -1,20 +1,36 @@
+<div align="center">
+
 # Teletext 2.0
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
-[![Convex](https://img.shields.io/badge/Backend-Convex-orange.svg)](https://convex.dev/)
-[![Kiroween 2026](https://img.shields.io/badge/Kiroween%202026-Resurrection-orange.svg)](https://kiroween.devpost.com/)
+**1974 broadcast teletext resurrected as a fast, 2G-resilient community hub.**
+
+[![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/iFhvZCp7y1s)
+[![Live App](https://img.shields.io/badge/Live%20App-teletext--2--0.vercel.app-00E5FF?style=for-the-badge&logo=vercel&logoColor=black)](https://teletext-2-0.vercel.app)
+[![Kiroween 2026](https://img.shields.io/badge/Kiroween%202026-Resurrection-FF6B00?style=for-the-badge&logo=devpost&logoColor=white)](https://kiroween.devpost.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00C853?style=for-the-badge)](LICENSE)
+
+<br/>
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Convex](https://img.shields.io/badge/Backend-Convex-F85B28?style=flat-square&logo=convex&logoColor=white)](https://convex.dev/)
+[![Google Gemini](https://img.shields.io/badge/Gemini%20AI-FactGuard-8E75C2?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev/)
+[![WCAG AA](https://img.shields.io/badge/Accessibility-WCAG%20AA-success?style=flat-square)](https://www.w3.org/WAI/standards-guidelines/wcag/)
+
+<br/>
 
 > **Publish to the public in two minutes, read in two seconds.**
 
-A modern, ultra-lightweight, offline-first teletext broadcast and interactive card service. Schools, clinics, municipal transit unions, and community groups paste any notice, and AI condenses it into authentic 40x24 teletext pages with a **Fact Guard** that verifies every date, time, phone number, and figure against the source document. Readers simply dial a 3-digit page number to receive instant updates on any phone—even on 2G connections or fully offline.
+</div>
+
+A modern, ultra-lightweight, offline-first teletext broadcast and interactive card service. Schools, clinics, municipal transit unions, and community groups paste any notice, and AI condenses it into authentic 40x24 teletext pages with a **Fact Guard** that verifies every date, time, phone number, and figure against the source document. Readers simply dial a 3-digit page number to receive instant updates on any phone - even on 2G connections or fully offline.
 
 Built for **Kiroween 2026** under the **Resurrection** category (bringing dead tech back to life) with **Kiro**.
 
 ---
 
-## ⚡ Quick Links
+## Quick Links
 
 | Resource | Link / Instructions |
 |---|---|
@@ -26,7 +42,7 @@ Built for **Kiroween 2026** under the **Resurrection** category (bringing dead t
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <p align="center">
   <img src="gallery/01_p100_main_index.png" alt="Teletext 2.0 Main Index P100" width="85%" />
@@ -59,16 +75,16 @@ Built for **Kiroween 2026** under the **Resurrection** category (bringing dead t
 
 ---
 
-## ✨ Features
+## Features
 
-### 📺 For Readers (Instant, Free, Zero Login)
+### For Readers (Instant, Free, Zero Login)
 - **Authentic 40x24 Grid**: Faithful teletext CRT aesthetic with 8-color palette, double-height headings, and sextant mosaic graphics.
-- **Instant Keyboard & Touch Controls**: Dial 3-digit numbers (`100`–`899`), swipe between sub-pages, or jump using red, green, yellow, and blue **Fastext** hotkeys (`R`, `G`, `Y`, `B`).
+- **Instant Keyboard & Touch Controls**: Dial 3-digit numbers (`100` to `899`), swipe between sub-pages, or jump using red, green, yellow, and blue **Fastext** hotkeys (`R`, `G`, `Y`, `B`).
 - **Offline PWA**: Full service worker caching. Visited pages remain accessible offline, marked with an **`OFFLINE COPY`** freshness badge.
 - **Inclusive Accessibility**: Plain-text **Clean Mode**, high-contrast palettes, reduced motion support, live screen-reader announcements, and full keyboard-only navigation. Passes WCAG 2 AA with **0 axe violations**.
 - **Sub-5 KB Payloads**: Compressed JSON page payloads clock in under 5 KB, loading in milliseconds over edge CDN.
 
-### 📝 For Publishers & Community Admins
+### For Publishers & Community Admins
 - **AI Condenser**: Paste unstructured notices, schedules, or announcements; Google Gemini condenses them into formatted 40x24 teletext pages.
 - **The Fact Guard**: Every date, time, monetary amount, telephone number, and name is extracted and cross-referenced with source sentences. Hallucinated numbers are flagged in red and must be confirmed before publishing.
 - **Stage 2: Stacks (HyperCard meets Teletext)**:
@@ -83,7 +99,7 @@ Built for **Kiroween 2026** under the **Resurrection** category (bringing dead t
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS.
 - **Backend & Database**: [Convex](https://convex.dev) (real-time database, mutations, scheduler crons).
@@ -94,7 +110,7 @@ Built for **Kiroween 2026** under the **Resurrection** category (bringing dead t
 
 ---
 
-## 📂 Repository Architecture
+## Repository Architecture
 
 ```
 Teletext-2.0/
@@ -118,7 +134,7 @@ Teletext-2.0/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js 22+
@@ -155,7 +171,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the reader.
 
 ---
 
-## 🧪 Testing & Verification
+## Testing & Verification
 
 The test suite combines unit tests, Convex integration tests, and randomized **property-based testing (PBT)** up to 10,000 iterations:
 
@@ -181,11 +197,11 @@ npm run e2e
 
 ---
 
-## 🤖 Built With Kiro
+## Built With Kiro
 
 This project was built from ground zero using **Kiro** and its spec-driven methodology:
 
-1. **Spec-Driven Architecture**: 9 specifications created in `.kiro/specs/` before writing code, each defining mathematical correctness properties (e.g., layout invariants P1–P15, scheduling rules S1–S4).
+1. **Spec-Driven Architecture**: 9 specifications created in `.kiro/specs/` before writing code, each defining mathematical correctness properties (e.g., layout invariants P1-P15, scheduling rules S1-S4).
 2. **Steering Documents**: 7 persistent steering docs in `.kiro/steering/` enforcing strict Next.js 16 conventions, security boundaries, and retro teletext standards.
 3. **Automated Agent Hooks**: Guarded development with 6 hooks (`core-boundary-guard`, `secret-guard`, `spec-sync`, `core-tests`, `style-guard`, `ai-typecheck-tests`).
 4. **Property-Based Bug Discovery**: Fast-check fuzzing surfaced subtle bugs that example unit tests missed (e.g., a 150-character heading overflowing subpages, standalone Yoruba tone marks mistaken for emoji, and `NaN` timestamp comparisons).
@@ -195,6 +211,7 @@ See [`docs/kiro-notes.md`](docs/kiro-notes.md) for the development log and promp
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
