@@ -22,7 +22,40 @@ Built for **Kiroween 2026** under the **Resurrection** category (bringing dead t
 | **Try the Reader** | Open the live link and dial `4` `1` `2` (or press `R`, `G`, `Y`, `B` for Fastext) |
 | **Interactive Lookup** | Try the student results lookup with Student ID `1001` and PIN `1234` |
 | **Publisher Dashboard** | Access `/dashboard` (demo credentials provided privately in the Devpost submission) |
-| **Demo Video** | Watch the walkthrough on [YouTube](https://youtu.be/dummy-link-placeholder) |
+| **Demo Video** | Watch the walkthrough on [YouTube](https://youtu.be/iFhvZCp7y1s) |
+
+---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="gallery/01_p100_main_index.png" alt="Teletext 2.0 Main Index P100" width="85%" />
+</p>
+
+| Public Reader & Directory | Community Hub |
+|:---:|:---:|
+| <img src="gallery/02_p400_greenfield_hub.png" alt="Greenfield High Hub P400" /> | <img src="gallery/03_p412_exam_notice.png" alt="Notice Page P412" /> |
+| **P400: Greenfield High Channel Hub** | **P412: High-Contrast Notice Page** |
+
+| Interactive Private Lookup | Security & Error Handling |
+|:---:|:---:|
+| <img src="gallery/04_p410_interactive_exam_lookup.png" alt="Exam Lookup Stack" /> | <img src="gallery/05_p410_pin_validation_error.png" alt="PIN Validation Error Handling" /> |
+| **P410: Student ID & Salted PIN Lookup** | **Instant Error State & Safety Validation** |
+
+| Two-Way Parent Inquiry | CardScript Community Trivia |
+|:---:|:---:|
+| <img src="gallery/06_p420_parent_inquiry_ticket.png" alt="Parent Inquiry Reference Ticket" /> | <img src="gallery/07_p430_trivia_quiz_score.png" alt="Trivia Quiz Score Summary" /> |
+| **P420: Absence Form with Trackable Reference** | **P430: Deterministic Quiz Engine** |
+
+| Publisher Admin Dashboard | Live Page Editor & CRT Preview |
+|:---:|:---:|
+| <img src="gallery/08_admin_publisher_dashboard.png" alt="Admin Publisher Dashboard" /> | <img src="gallery/09_p401_page_editor_preview.png" alt="Page Editor Split Preview" /> |
+| **Organization Management & 14-Day Analytics** | **Dual Split Editor & Live Teletext Preview** |
+
+| Visual & Code Stack Builder | Gemini AI Condenser & Fact Guard |
+|:---:|:---:|
+| <img src="gallery/10_stack_visual_and_code_editor.png" alt="Stack Builder Visual & JSON" /> | <img src="gallery/11_ai_condenser_factguard_badges.png" alt="AI Condenser with Fact Guard Verification" /> |
+| **Interactive Stack Builder (Visual & JSON)** | **AI Condenser with Fact Guard Cross-Verification** |
 
 ---
 
